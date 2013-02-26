@@ -1,0 +1,389 @@
+<!doctype html>
+<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
+<!--[if lt IE 7 ]> <html lang="en" class="no-js ie6" style="height: 100%; width: 100%"> <![endif]-->
+<!--[if IE 7 ]>    <html lang="en" class="no-js ie7" style="height: 100%; width: 100%"> <![endif]-->
+<!--[if IE 8 ]>    <html lang="en" class="no-js ie8" style="height: 100%; width: 100%"> <![endif]-->
+<!--[if IE 9 ]>    <html lang="en" class="no-js ie9" style="height: 100%; width: 100%"> <![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--> <html lang="en" class="no-js"  style="height: 100%; width: 100%"> <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+
+  <!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+       Remove this if you use the .htaccess -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+  <title></title>
+  <meta name="description" content="">
+  <meta name="author" content="monteslu">
+
+  <!--  Mobile viewport optimized: j.mp/bplateviewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+  <!-- CSS : implied media="all" -->
+  <link rel="stylesheet" href="/css/style.css?v=3">
+
+  <!-- Uncomment if you are specifically targeting less enabled mobile browsers
+  <link rel="stylesheet" media="handheld" href="css/handheld.css?v=2">  -->
+
+  <!-- All JavaScript at the bottom, except for Modernizr which enables HTML5 elements & feature detects -->
+  <script src="/js/libs/modernizr2.js"></script>
+  <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+ <script TYPE="text/javascript" src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.2/dojo/dojo.js" data-dojo-config="parseOnLoad: false, baseUrl: '/js/', modulePaths:{azp:'azp'}, gfxRenderer:'canvas,svg,vml,silverlight',defaultDuration:1"></script>
+
+<style type="text/css">
+        @import "http://ajax.googleapis.com/ajax/libs/dojo/1.7.2/dijit/themes/claro/claro.css";
+        @import "http://ajax.googleapis.com/ajax/libs/dojo/1.7.2/dojox/widget/ColorPicker/ColorPicker.css";
+
+</style>
+</head>
+<body class="claro" style="height: 100%; width: 100%">
+
+  <div id="container">
+    <header>
+
+
+    </header>
+
+    <div id="main">
+
+
+<script>
+dojo.require('azp.BBCodeEditor');
+
+
+var chatMessageList = [];
+var geomMessageList = [];
+var messageList = [];
+var messageMax = 200;
+var wbId;
+var lastMessage = '';
+var userList = [];
+var messageListObj = null;
+
+
+var error = '';
+</script>
+<script src="/js/azp/WBCommon.js"></script>
+<script src="/js/azp/Whiteboard.js"></script>
+
+<!--<script src="/js/azp/BBCodeEditor.js"></script>-->
+
+<style>
+#header{
+  font-size: 3em;
+  text-align: center;
+
+}
+
+#setUserDiv{
+  text-align: center;
+}
+
+._webstore_badge {
+  width: 128px;
+  height: 190px;
+  top: 0px;
+  right: 0px;
+  position: absolute;
+  margin: 0 50px 0 50px;
+  padding: 5px;
+  box-shadow: #000 0 0 5px;
+  background-color: #eae88c;
+  border: solid 1px #c9c778;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  display: inline;
+  font-family: Arial;
+  opacity: 1;
+  -webkit-transition: all 0.5s ease-in-out;
+}
+
+</style>
+
+
+<div id="setUserDiv" style="display: none; padding: 5px;">
+  <div id="header"><h1>Collaborative Whiteboard</h1></div>
+
+  <br>
+  Choose any user name (no spaces or punctuation):<input id="userNameText" data-dojo-type="dijit.form.ValidationTextBox"> <br>
+  Choose a room name: <input id="wbIdText" data-dojo-type="dijit.form.TextBox"><br> <span id="userNameBtn" data-dojo-type="dijit.form.Button">Start Drawing!</span><br>
+
+  <span id="subitUserNameMessage"></span>
+  <br><br>
+<!--  <script src="/js/badge.js"></script>-->
+
+</div>
+<div id="imgDialog" data-dojo-type="dijit.Dialog" title="Right-click on image to save it">
+    <img id="exportedImg" name="exportedImg">
+</div>
+
+
+<div id="textDialog" data-dojo-type="dijit.Dialog" title="Type in some text."  style="display: none">
+    <input type="text" data-dojo-type="dijit.form.ValidationTextBox" id="wbText" name="wbText"><br>
+  <button data-dojo-type="dijit.form.Button" id="okTextBtn">OK</button>&nbsp;&nbsp;&nbsp;<button data-dojo-type="dijit.form.Button" id="cancelTextBtn">Cancel</button>
+</div>
+
+<div id="movieDialog" data-dojo-type="dijit.Dialog" title="Move slider to see drawing steps."  style="display: none">
+    <div id="movieWhiteboardContainer" style="border: 2px blue solid; background-color: white;"></div><br>
+    <div id="movieSlider" data-dojo-type="dijit.form.HorizontalSlider" value="0"
+minimum="0" maximum="1" discreteValues="2" intermediateChanges="true"
+showButtons="false" style="width:500px;"></div><br> <button data-dojo-type="dijit.form.Button" id="exportMovieImgBtn"><img src="/images/export-icon.png"></button>
+        <div data-dojo-type="dijit.Tooltip" connectId="exportMovieImgBtn">Export this snapshot of the drawing surface.</div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        user: <span id="movieUser">user</span><br>
+</div>
+
+
+<div id="applicationArea" style="width: 100%; height: 100%; display: none; position: absolute; top: 0; bottom: 0;" data-dojo-type="dijit.layout.BorderContainer" liveSplitters="true">
+  <div region="leading"  style="width: 40em; height: 100%" data-dojo-type="dijit.layout.ContentPane" splitter="true">
+    <div id="chatArea" style="width: 100%; height: 100%" data-dojo-type="dijit.layout.BorderContainer" liveSplitters="true">
+
+      <div id="output" style="overflow: auto; width: 37em;" region="center" data-dojo-type="dijit.layout.ContentPane" splitter="true">
+      </div>
+      <div style="width: 37em;" region="bottom" data-dojo-type="dijit.layout.ContentPane" splitters="true">
+        <table border="0" cellspacing="5"><tr><td>
+        <textarea data-dojo-type="azp.BBCodeEditor" cols="40" rows="3" id="chatText"></textarea> <span id="chatBtn" data-dojo-type="dijit.form.Button">Say</span><span id="chatWaitMessage"></span>
+
+        </td>
+        <td>
+        Users:<br>
+        <div style="width: 10em; overflow: auto;border: 1px solid #888888;" id="userListDiv"></div>
+        </td>
+        </tr></table>
+      </div>
+    </div>
+  </div>
+
+<div region="center" data-dojo-type="dijit.layout.ContentPane"  splitter="true">
+  draw:
+
+  <div>
+  <div id="whiteboardContainer" style="border: 2px blue solid; background-color: white;"></div>
+  <div id="whiteboardOverlayContainer"  style="border: 2px black solid; z-index : 1;"></div>
+  </div>
+      <form onsubmit="return false" data-dojo-type="dijit.form.Form" id="toolForm">
+
+       <button data-dojo-type="dijit.form.Button" id="penToolBtn"><img border="0" src="/images/pencil.png"></button>
+       <div data-dojo-type="dijit.Tooltip" connectId="penToolBtn" position="above" showDelay="0">Pencil<br>(freehand drawing)</div>
+
+       <button data-dojo-type="dijit.form.Button" id="lineToolBtn"><img border="0" src="/images/line.png"></button>
+       <div data-dojo-type="dijit.Tooltip" connectId="lineToolBtn" position="above" showDelay="0">Straight Line</div>
+
+       <button data-dojo-type="dijit.form.Button" id="rectToolBtn"><img border="0" src="/images/rect.png"></button>
+       <div data-dojo-type="dijit.Tooltip" connectId="rectToolBtn" position="above" showDelay="0">Rectangle</div>
+
+       <button data-dojo-type="dijit.form.Button" id="filledRectToolBtn"><img border="0" src="/images/filledRect.png"></button>
+       <div data-dojo-type="dijit.Tooltip" connectId="filledRectToolBtn" position="above" showDelay="0">Filled Rectangle</div>
+
+       <button data-dojo-type="dijit.form.Button" id="ellipseToolBtn"><img border="0" src="/images/ellipse.png"></button>
+       <div data-dojo-type="dijit.Tooltip" connectId="ellipseToolBtn" position="above" showDelay="0">Ellipse</div>
+
+       <button data-dojo-type="dijit.form.Button" id="filledEllipseToolBtn"><img border="0" src="/images/filledEllipse.png"></button>
+       <div data-dojo-type="dijit.Tooltip" connectId="filledEllipseToolBtn" position="above" showDelay="0">Filled Ellipse</div>
+
+
+       <button data-dojo-type="dijit.form.Button" id="textToolBtn"><img border="0" src="/images/text.png"></button>
+       <div data-dojo-type="dijit.Tooltip" connectId="textToolBtn" position="above" showDelay="0">Draw Text</div>
+
+       <button data-dojo-type="dijit.form.Button" id="moveToolBtn"><img border="0" src="/images/move.png"></button>
+       <div data-dojo-type="dijit.Tooltip" connectId="moveToolBtn" position="above" showDelay="0">Move a shape</div>
+
+       <button data-dojo-type="dijit.form.Button" id="moveUpToolBtn"><img border="0" src="/images/moveUp.png"></button>
+       <div data-dojo-type="dijit.Tooltip" connectId="moveUpToolBtn" position="above" showDelay="0">Pull a shape forward</div>
+
+       <button data-dojo-type="dijit.form.Button" id="moveDownToolBtn"><img border="0" src="/images/moveDown.png"></button>
+       <div data-dojo-type="dijit.Tooltip" connectId="moveDownToolBtn" position="above" showDelay="0">Push a shape back</div>
+
+       <button data-dojo-type="dijit.form.Button" id="deleteToolBtn"><img border="0" src="/images/delete.png"></button>
+       <div data-dojo-type="dijit.Tooltip" connectId="deleteToolBtn" position="above" showDelay="0">Delete a shape</div>
+
+       <button data-dojo-type="dijit.form.Button" id="smileBtn"> ;-) </button>
+       <div data-dojo-type="dijit.Tooltip" connectId="smileBtn" position="above" showDelay="0">Say Cheese!</div>
+
+       <br>
+
+       <div id="lineColorDisplay" style="background-color: FFFFFF; border-color: black; border-width: 1px;" data-dojo-type="dijit.form.DropDownButton">
+         <span id="colorText">color <span id="lineSwatch" style="height: 10px; width: 10px; border: 1px solid black; background-color: black;">&nbsp;&nbsp;</span></span>
+         <div data-dojo-type="dijit.TooltipDialog" id="lineColorPaletteDialog" title="Color Palette">
+          <div data-dojo-type="dojox.widget.ColorPicker" id="lineColorPaletteWidget"></div>
+          <button data-dojo-type="dijit.form.Button" id="lineColorPaletteOkBtn">OK</button> <button data-dojo-type="dijit.form.Button" id="lineColorPaletteCancelBtn">Cancel</button>
+         </div>
+       </div>
+       <div id="fillColorDisplay" style="background-color: FFFFFF; border-color: black; border-width: 1px;" data-dojo-type="dijit.form.DropDownButton">
+         <span id="colorText">fill <span id="fillSwatch" style="height: 10px; width: 10px; border: 1px solid black; background-color: white;">&nbsp;&nbsp;</span></span>
+         <div data-dojo-type="dijit.TooltipDialog" id="fillColorPaletteDialog" title="Color Palette">
+          <div data-dojo-type="dojox.widget.ColorPicker" id="fillColorPaletteWidget"></div>
+          <button data-dojo-type="dijit.form.Button" id="fillColorPaletteOkBtn">OK</button> <button data-dojo-type="dijit.form.Button" id="fillColorPaletteCancelBtn">Cancel</button>
+         </div>
+       </div>
+       <select name="select" data-dojo-type="dijit.form.Select" id="lineStrokeSelect">
+          <option value="1">
+            Line Thicknes:  1
+          </option>
+          <option value="2">
+            Line Thicknes:  2
+          </option>
+          <option value="3" selected="selected">
+            Line Thicknes:  3
+          </option>
+          <option value="4">
+            Line Thicknes:  4
+          </option>
+          <option value="5">
+            Line Thicknes:  5
+          </option>
+          <option value="6">
+            Line Thicknes:  6
+          </option>
+          <option value="7">
+            Line Thicknes:  7
+          </option>
+          <option value="8">
+            Line Thicknes:  8
+          </option>
+          <option value="9">
+            Line Thicknes:  9
+          </option>
+          <option value="10">
+            Line Thicknes: 10
+          </option>
+          <option value="15">
+            Line Thicknes: 15
+          </option>
+          <option value="20">
+            Line Thicknes: 20
+          </option>
+          <option value="30">
+            Line Thicknes: 30
+          </option>
+          <option value="50">
+            Line Thicknes: 50
+          </option>
+          <option value="75">
+            Line Thicknes: 75
+          </option>
+          <option value="100">
+            Line Thicknes:100
+          </option>
+        </select>
+
+
+        <select name="select" data-dojo-type="dijit.form.Select" id="fontSizeSelect">
+          <option value="5">
+            Font:  5pt
+          </option>
+          <option value="6">
+            Font:  6pt
+          </option>
+          <option value="7">
+            Font:  7pt
+          </option>
+          <option value="8">
+            Font:  8pt
+          </option>
+          <option value="9">
+            Font:  9pt
+          </option>
+          <option value="10">
+            Font: 10pt
+          </option>
+          <option value="12" selected="selected">
+            Font: 12pt
+          </option>
+          <option value="14">
+            Font: 14pt
+          </option>
+          <option value="16">
+            Font: 16pt
+          </option>
+          <option value="20">
+            Font: 20pt
+          </option>
+          <option value="24">
+            Font: 24pt
+          </option>
+          <option value="32">
+            Font: 32pt
+          </option>
+        <option value="48">
+            Font: 48pt
+          </option>
+        <option value="64">
+            Font: 64pt
+          </option>
+        </select>
+
+        <button data-dojo-type="dijit.form.Button" id="exportImgBtn"><img src="/images/export-icon.png"></button>
+        <div data-dojo-type="dijit.Tooltip" connectId="exportImgBtn" position="below" showDelay="0">Export the drawing surface.</div>
+
+        <button data-dojo-type="dijit.form.Button" id="showMovieBtn"><img src="/images/movie-icon.png"></button>
+        <div data-dojo-type="dijit.Tooltip" connectId="showMovieBtn" position="below" showDelay="0">View all steps that made this drawing.</div>
+
+
+        <div id="clearDrawingDisplay" data-dojo-type="dijit.form.DropDownButton">
+         <span id="colorText">clear</span>
+         <div data-dojo-type="dijit.TooltipDialog" id="clearDrawingDialog" title="Clear Drawing">
+            Clear Drawing?<br>
+          <button id="clearDrawingYesBtn" data-dojo-type="dijit.form.Button">Yes</button> &nbsp;&nbsp;&nbsp; <button id="clearDrawingNoBtn" data-dojo-type="dijit.form.Button">No</button>
+         </div>
+       </div>
+    </form>
+  <BR><BR>
+
+
+
+<section id="app" hidden>
+  <div class="container"><span id="live">LIVE</span><video id="monitor" autoplay onclick="changeFilter(this)" title="Click me to see different filters" style="height: 40px; width: 60px;"></video></div>
+ </section>
+
+ <div id="splash">
+  <p id="errorMessage">&uarr;<br>Click to begin</p>
+ </div>
+ <div id="gallery"></div>
+</article>
+<canvas id="photo" style="height: 200px; width: 300px; display: none;" ></canvas>
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+    </div>
+
+    <footer>
+
+    </footer>
+  </div> <!--! end of #container -->
+
+
+
+  <!--[if lt IE 7 ]>
+    <script src="js/libs/dd_belatedpng.js"></script>
+    <script> DD_belatedPNG.fix('img, .png_bg'); //fix any <img> or .png_bg background-images </script>
+  <![endif]-->
+
+
+  <!-- asynchronous google analytics: mathiasbynens.be/notes/async-analytics-snippet
+       change the UA-XXXXX-X to be your site's ID -->
+  <script>
+  /*
+   var _gaq = [['_setAccount', 'UA-XXXXX-X'], ['_trackPageview']];
+   (function(d, t) {
+    var g = d.createElement(t),
+        s = d.getElementsByTagName(t)[0];
+    g.async = true;
+    g.src = ('https:' == location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    s.parentNode.insertBefore(g, s);
+   })(document, 'script');
+
+   */
+  </script>
+
+</body>
+</html>
