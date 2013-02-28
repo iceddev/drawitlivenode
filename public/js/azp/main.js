@@ -19,7 +19,7 @@ define([
   "dojo/fx",
   "dojox/gfx/move",
   "dojo/NodeList-fx",
-  "dojox/widget/ColorPicker",
+  "dijit/ColorPalette",
   "dijit/form/DropDownButton",
   "dijit/TooltipDialog",
   "dijit/form/RadioButton",
@@ -1070,7 +1070,7 @@ var submitUserName = function(){
 
 
 
-  selectTool('pen');
+
 
   dojo.forEach(tools,function(tool){
     dojo.connect(dijit.registry.byId(tool.name + 'ToolBtn'),'onClick',function(){
@@ -1274,7 +1274,7 @@ function DNDFileController(id) {
 
   loadFunction();
 
-
+selectTool('pen');
 
 
 

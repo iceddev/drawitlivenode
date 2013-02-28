@@ -31,7 +31,7 @@
   <script type="text/javascript" src="/socket.io/socket.io.js"></script>
   <script>
     dojoConfig = {
-      baseUrl: '/js',
+      baseUrl: './js',
       gfxRenderer:'canvas,svg,vml,silverlight',
       parseOnLoad: false,
       defaultDuration:1,
@@ -50,11 +50,29 @@
         },{
           name: "azp",
           location: "azp"
+        },
+        {
+          name: "dist",
+          location: "dist"
         }],
-      deps: [ 'azp' ] // And array of modules to load on "boot"
+      deps: [ 'azp' ], // And array of modules to load on "boot"
+      locale: 'en-us'
     };
   </script>
- <script TYPE="text/javascript" src="/js/dojo/dojo.js"></script>
+ <!-- <script TYPE="text/javascript" src="/js/dist/dojo.js.uncompressed.jsa"></script>
+  <script TYPE="text/javascript" src="/js/dist/dojo.js"></script>-->
+  <script>
+    if(!window.require){
+      console.log('Javascript not built into single file, using dojo for loader in dev mode');
+      var hd = document.getElementsByTagName("head")[0],
+      el = document.createElement("script");
+      el.async = true; // set it to async
+      el.src = '/js/dojo/dojo.js';
+      hd.insertBefore(el, hd.firstChild); // insert it so it will load
+    }
+  </script>
+
+
 
 <style type="text/css">
         @import "/js/dijit/themes/claro/claro.css";
@@ -230,14 +248,14 @@ showButtons="false" style="width:500px;"></div><br> <button data-dojo-type="diji
        <div id="lineColorDisplay" style="background-color: FFFFFF; border-color: black; border-width: 1px;" data-dojo-type="dijit.form.DropDownButton">
          <span id="colorText">color <span id="lineSwatch" style="height: 10px; width: 10px; border: 1px solid black; background-color: black;">&nbsp;&nbsp;</span></span>
          <div data-dojo-type="dijit.TooltipDialog" id="lineColorPaletteDialog" title="Color Palette">
-          <div data-dojo-type="dojox.widget.ColorPicker" id="lineColorPaletteWidget"></div>
+          <div data-dojo-type="dijit.ColorPalette" id="lineColorPaletteWidget"></div>
           <button data-dojo-type="dijit.form.Button" id="lineColorPaletteOkBtn">OK</button> <button data-dojo-type="dijit.form.Button" id="lineColorPaletteCancelBtn">Cancel</button>
          </div>
        </div>
        <div id="fillColorDisplay" style="background-color: FFFFFF; border-color: black; border-width: 1px;" data-dojo-type="dijit.form.DropDownButton">
          <span id="colorText">fill <span id="fillSwatch" style="height: 10px; width: 10px; border: 1px solid black; background-color: white;">&nbsp;&nbsp;</span></span>
          <div data-dojo-type="dijit.TooltipDialog" id="fillColorPaletteDialog" title="Color Palette">
-          <div data-dojo-type="dojox.widget.ColorPicker" id="fillColorPaletteWidget"></div>
+          <div data-dojo-type="dijit.ColorPalette" id="fillColorPaletteWidget"></div>
           <button data-dojo-type="dijit.form.Button" id="fillColorPaletteOkBtn">OK</button> <button data-dojo-type="dijit.form.Button" id="fillColorPaletteCancelBtn">Cancel</button>
          </div>
        </div>
