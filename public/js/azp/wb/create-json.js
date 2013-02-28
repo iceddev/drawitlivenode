@@ -134,7 +134,7 @@ define([
     },
 
     ellipse : function(bounds, lineColor, lineStroke, fillColor){
-      bounds = utils.snormalizeBounds(bounds);
+      bounds = utils.normalizeBounds(bounds);
       var geom = {
           xPts: [bounds.x1,bounds.x2],
           yPts: [bounds.y1,bounds.y2]

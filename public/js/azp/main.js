@@ -606,7 +606,7 @@ var doGfxMouseMove = function(evt)
         geom  = createGeom.ellipse(bounds, whiteboard.lineColor, whiteboard.lineStroke, whiteboard.fillColor);
         drawFromJSON(geom,whiteboard.overlayDrawing);
       }else if(whiteboard.tool == 'line'){
-        geom  = createGeom.line(bounds, whiteboard.lineStroke, whiteboard.fillColor);
+        geom  = createGeom.line(bounds, whiteboard.lineColor, whiteboard.lineStroke, whiteboard.fillColor);
         drawFromJSON(geom,whiteboard.overlayDrawing);
       }else if(whiteboard.tool == 'move'){
         if(whiteboard.selectedShape && whiteboard.mouseDownPt)
@@ -720,13 +720,13 @@ var doGfxMouseMove = function(evt)
       }else if(whiteboard.tool == 'moveUp'){
         var shape = getHoveredShape(whiteboard.drawing,pt);
         if(shape){
-          geom = createMoveUpJSON(shape);
+          geom = createGeom.moveUp(shape);
           drawFromJSON(geom,whiteboard.drawing);
         }
       }else if(whiteboard.tool == 'moveDown'){
         var shape = getHoveredShape(whiteboard.drawing,pt);
         if(shape){
-          geom = createMoveDownJSON(shape);
+          geom = createGeom.moveDown(shape);
           drawFromJSON(geom,whiteboard.drawing);
         }
       }else if(whiteboard.tool == 'text'){
@@ -954,7 +954,7 @@ var showMovie = function(){
     var text = dijit.registry.byId('wbText').getValue();
     if((text != '') && (whiteboard.textPoint)){
       dijit.registry.byId('textDialog').hide();
-      var geom = createTextJSON(whiteboard.textPoint,text);
+      var geom = createGeom.text(whiteboard.textPoint, text, whiteboard.fontSize, whiteboard.lineColor);
       drawFromJSON(geom,whiteboard.drawing);
       whiteboard.textPoint = null;
       whiteboard.sendMessage({geometry:geom});
@@ -966,7 +966,7 @@ var showMovie = function(){
     whiteboard.overlayDrawing.clear();
     var text = dijit.registry.byId('wbText').getValue();
     if((text != '') && (whiteboard.textPoint)){
-      var geom = createTextJSON(whiteboard.textPoint,text);
+      var geom = createGeom.text(whiteboard.textPoint, text, whiteboard.fontSize, whiteboard.lineColor);
       drawFromJSON(geom,whiteboard.overlayDrawing);
     }
 
