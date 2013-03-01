@@ -75,11 +75,11 @@ module.exports = function(grunt) {
     dojo: {
       wb: {},
       options: {
-        dojo: 'public/js/dojo/dojo.js',
-        profile: 'wb.profile.js',
-        'package': './',
+        dojo: 'dojo/dojo.js',
+        profile: '../../wb.profile.js',
+        'package': '../../',
         dojoConfig: 'dojoConfigBuild.js',
-        cwd: './'
+        cwd: './public/js'
       }
     },
     jsdoc: {

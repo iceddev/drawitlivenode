@@ -14,7 +14,7 @@ define([
   var io = socketio.listen(server);
 
   app.configure(function(){
-    app.set('port', process.env.PORT || 3000);
+    app.set('port', process.env.PORT || 3003);
     app.set('views', path.join(config.baseUrl,'views'));
     app.set('view engine', 'jade');
     app.use(express.favicon());
@@ -32,14 +32,19 @@ define([
   app.get('/', routes.index);
 
   var whiteboards = {};
+  var maxAlive = 1000 * 60 * 60 * 24; // one day
 
   //define some rpc functions
   wsrpc.functions = {
     getWhiteBoard: function(id,userName){
       try{
         //console.log('getWhiteBoard',id,userName);
+        purgeWhiteboards();
+
         if(!whiteboards[id]){
-          whiteboards[id] = {messages:[],users:[]};
+          whiteboards[id] = {messages:[],users:[], time: Date.now()};
+        }else{
+          whiteboards[id].time = Date.now();
         }
         this.socket.join(id);
         whiteboards[id].users.push(userName);
@@ -49,7 +54,11 @@ define([
       }
     },
     getUsers: function(id){
-      this.respond(whiteboards[id].users);
+      var wb =whiteboards[id];
+      if(wb){
+        wb.time = Date.now();
+        this.respond(whiteboards[id].users);
+      }
     },
     sendMessage: function(id,message,userName){
         message.fromUser = userName;
@@ -57,12 +66,27 @@ define([
         //TODO format message text
 
         var wb =whiteboards[id];
-        wb.messages.push(message);
+        if(wb){
+          wb.time = Date.now();
+          wb.messages.push(message);
 
-        this.socket.broadcast.to(id).emit('message',message);
-        this.respond({status:'ok',message: message});
+          this.socket.broadcast.to(id).emit('message',message);
+          this.respond({status:'ok',message: message});
+        }
+
     }
   };
+
+  function purgeWhiteboards(){
+    for(var id in whiteboards){
+      var wb = whiteboards[id];
+      if(wb){
+        if((Date.now() - wb.time) > maxAlive){
+          delete whiteboards.id;
+        }
+      }
+    }
+  }
 
   //lisent on socket.io for incoming rpc requests
   wsrpc.listen(io);

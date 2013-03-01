@@ -19,19 +19,61 @@ define([
   "dojo/fx",
   "dojox/gfx/move",
   "dojo/NodeList-fx",
-  "dijit/ColorPalette",
+  "dojox/widget/ColorPicker",
   "dijit/form/DropDownButton",
+  "dijit/Dialog",
   "dijit/TooltipDialog",
+  "dijit/Tooltip",
   "dijit/form/RadioButton",
   "dijit/form/Select",
   "dijit/form/Form",
   "dijit/form/Slider",
+  "dijit/form/HorizontalSlider",
 
 
   'dojo/domReady!'
 ], function(dom,on,WsRpc, createGeom, parser, dijit){
 
-parser.parse();
+var selectTool = function(toolName)
+  {
+
+    hide("lineColorDisplay");
+    hide("fillColorDisplay");
+    hide("lineStrokeSelect");
+    hide("fontSizeSelect");
+
+    var tool = null;
+    dojo.forEach(tools,function(aTool){
+        if(aTool.name == toolName){
+          tool = aTool;
+        }
+      //dojo.style(dijit.registry.byId(aTool.name + 'ToolBtn').domNode,'border','0px');
+        //dojo.addClass(dojo.style(dijit.registry.byId(aTool.name + 'ToolBtn').domNode, "selected");
+        dojo.removeClass(dijit.registry.byId(aTool.name + 'ToolBtn').domNode, "selected");
+    });
+
+    //dojo.style(dijit.registry.byId(tool.name + 'ToolBtn').domNode,'border','2px solid black');
+        dojo.addClass(dijit.registry.byId(tool.name + 'ToolBtn').domNode, "selected");
+    whiteboard.tool = tool.name;
+
+    if(tool.showLineColor){
+      show("lineColorDisplay");
+    }
+    if(tool.showFillColor){
+      show("fillColorDisplay");
+    }
+    if(tool.showLineThickness){
+      show("lineStrokeSelect");
+    }
+    if(tool.showFontSize){
+      show("fontSizeSelect");
+    }
+
+  };
+
+parser.parse().then(function(){
+  selectTool('pen');
+});
 
 var tools = [{name: 'line', showLineColor: true, showLineThickness: true},
       {name: 'pen', showLineColor: true, showLineThickness: true},
@@ -711,7 +753,7 @@ var doGfxMouseMove = function(evt)
         if(whiteboard.selectedShape && whiteboard.mouseDownPt){
           var ptDelta = {x: (pt.x - whiteboard.mouseDownPt.x),y: (pt.y - whiteboard.mouseDownPt.y)};
 
-          geom = createGeom.moveJSON(whiteboard.selectedShape, ptDelta);
+          geom = createGeom.createGeom.move(whiteboard.selectedShape, ptDelta);
 
           drawFromJSON(geom,whiteboard.drawing);
           //console.dir(geom);
@@ -790,42 +832,7 @@ var ptInBox = function(pt, box){
 
 };
 
-var selectTool = function(toolName)
-  {
 
-    hide("lineColorDisplay");
-    hide("fillColorDisplay");
-    hide("lineStrokeSelect");
-    hide("fontSizeSelect");
-
-    var tool = null;
-    dojo.forEach(tools,function(aTool){
-        if(aTool.name == toolName){
-          tool = aTool;
-        }
-      //dojo.style(dijit.registry.byId(aTool.name + 'ToolBtn').domNode,'border','0px');
-        //dojo.addClass(dojo.style(dijit.registry.byId(aTool.name + 'ToolBtn').domNode, "selected");
-        dojo.removeClass(dijit.registry.byId(aTool.name + 'ToolBtn').domNode, "selected");
-    });
-
-    //dojo.style(dijit.registry.byId(tool.name + 'ToolBtn').domNode,'border','2px solid black');
-        dojo.addClass(dijit.registry.byId(tool.name + 'ToolBtn').domNode, "selected");
-    whiteboard.tool = tool.name;
-
-    if(tool.showLineColor){
-      show("lineColorDisplay");
-    }
-    if(tool.showFillColor){
-      show("fillColorDisplay");
-    }
-    if(tool.showLineThickness){
-      show("lineStrokeSelect");
-    }
-    if(tool.showFontSize){
-      show("fontSizeSelect");
-    }
-
-  };
 
  var hide = function(id){
   try{
@@ -860,20 +867,19 @@ var  sendChatMessage = function(){
   var ct = dijit.registry.byId('chatText');
   var cb = dijit.registry.byId('chatBtn');
   var msg = dojo.trim('' + ct.getValue());
-  if(msg == '')
-  {
-    cwm.innerHTML = 'Cat got your tongue?';
-    }else if(msg == lastMessage){
-      cwm.innerHTML = 'That\'s what you said last time.';
-    }else{
-      ct.setAttribute('disabled',true);
+  if(msg == lastMessage){
+    cwm.innerHTML = 'That\'s what you said last time.';
+  }else if(msg){
+    ct.setAttribute('disabled',true);
     cb.setAttribute('disabled',true);
     lastMessage = msg;
     dojo.byId('chatWaitMessage').innerHTML = 'sending...';
     whiteboard.sendMessage({chatMessage:msg});
-    }
+  }else{
+    cwm.innerHTML = 'Cat got your tongue?';
+  }
 
-  };
+};
 
  var exportImage = function(){
   try{
@@ -1195,7 +1201,7 @@ function DNDFileController(id) {
 
                 img.onload = function(){
                   console.log(img.height, img.width);
-                  var maxDim = 75;
+                  var maxDim = 200;
                   //console.log(whiteboard);
                   if(img.height > maxDim || img.width > maxDim){
                     //need to scale
@@ -1223,7 +1229,7 @@ function DNDFileController(id) {
                   tempContext.drawImage(img,0,0,newW,newH);
 
                   var bounds = {x1:pt.x, y1:pt.y, x2: pt.x + newW, y2: pt.y + newH};
-                  var imgJSON = createImageJSON(bounds,tempCanvas.toDataURL());
+                  var imgJSON = createGeom.image(bounds,tempCanvas.toDataURL());
 
 
                   //console.log(imgJSON);
@@ -1274,7 +1280,7 @@ function DNDFileController(id) {
 
   loadFunction();
 
-selectTool('pen');
+
 
 
 
