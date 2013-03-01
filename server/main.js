@@ -29,25 +29,39 @@ define([
     app.use(express.errorHandler());
   });
 
-  app.get('/', routes.index);
+  app.get('/rpctest', routes.index);
 
   var whiteboards = {};
   var maxAlive = 1000 * 60 * 60 * 24; // one day
 
   //define some rpc functions
   wsrpc.functions = {
-    getWhiteBoard: function(id,userName){
+    getWhiteBoard: function(id, userName){
       try{
         //console.log('getWhiteBoard',id,userName);
         purgeWhiteboards();
-
-        if(!whiteboards[id]){
-          whiteboards[id] = {messages:[],users:[], time: Date.now()};
+        var wb = whiteboards[id];
+        if(!wb){
+          wb = {messages:[],users:[], time: Date.now()};
+          whiteboards[id] = wb;
         }else{
-          whiteboards[id].time = Date.now();
+          wb.time = Date.now();
         }
+
         this.socket.join(id);
-        whiteboards[id].users.push(userName);
+
+        userName = cleanString(userName);
+        var hasUser = false;
+        for (var i = 0; i < wb.users.length; i++) {
+          if(wb.users[i] == userName){
+            hasUser = true;
+          }
+        }
+        if(!hasUser){
+          wb.users.push(userName);
+        }
+
+        this.socket.broadcast.to(id).emit('users',whiteboards[id].users);
         this.respond(whiteboards[id]);
       }catch(e){
         this.error(e);
@@ -60,7 +74,7 @@ define([
         this.respond(whiteboards[id].users);
       }
     },
-    sendMessage: function(id,message,userName){
+    sendMessage: function(id, message, userName){
         message.fromUser = userName;
 
         //TODO format message text
@@ -68,6 +82,9 @@ define([
         var wb =whiteboards[id];
         if(wb){
           wb.time = Date.now();
+          if(message.chatMessage){
+            message.chatMessage = cleanString(message.chatMessage);
+          }
           wb.messages.push(message);
 
           this.socket.broadcast.to(id).emit('message',message);
@@ -85,6 +102,14 @@ define([
           delete whiteboards.id;
         }
       }
+    }
+  }
+
+  function cleanString(str){
+    if(str){
+      str = String(str);
+      str = str.replace(/</g,'{').replace(/>/g,'}');
+      return str;
     }
   }
 

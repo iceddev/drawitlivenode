@@ -5,6 +5,7 @@ define([
   './wb/create-json',
   "dojo/parser",
   'dijit',
+  'dojo/_base/fx',
 
   'dijit/form/ValidationTextBox',
   'dijit/registry',
@@ -32,7 +33,7 @@ define([
 
 
   'dojo/domReady!'
-], function(dom,on,WsRpc, createGeom, parser, dijit){
+], function(dom,on,WsRpc, createGeom, parser, dijit, fx){
 
 var selectTool = function(toolName)
   {
@@ -129,41 +130,44 @@ whiteboard.sendMessage = function(message){
  var getUserList = function() {
 
   wsrpc.methods.getUsers(wbId).then(function(users){
-    populateUserList ( users);
-    setTimeout ( "getUserList()", whiteboard.userCheckInterval);
+    populateUserList (users);
+    //setTimeout ( "getUserList()", whiteboard.userCheckInterval);
   });
  };
 
 var populateUserList = function(userList){
+  if(userList && userList.length){
     try{
       var output = '';
       dojo.forEach(userList,function(user){
         output += ('<span id=\"userListItem' + user + '\" style=\"background-color: #FFFFFF;\">' + user + '</span><br>');
       });
-      dojo.byId("userListDiv").innerHTML = output;
+      dom.byId("userListDiv").innerHTML = output;
     }catch(e){
       console.info("error filling user list div",e);
     }
-  };
+    animateUserItem(userList[userList.length - 1]);
+  }
+};
 
 var animateUserItem = function(user){
     try{
-      var userNode = dojo.byId("userListItem" + user);
+      var userNode = dom.byId("userListItem" + user);
       if(userNode){
-        dojo.animateProperty({
-                node: userNode,
-                duration: 750,
-                properties: {
-                    backgroundColor: {
-                        start: "red",
-                        end: "white"
-                    },
-                    color: {
-                        start: "white",
-                        end: "black"
-                    }
-                }
-            }).play();
+        fx.animateProperty({
+          node: userNode,
+          duration: 750,
+          properties: {
+              backgroundColor: {
+                  start: "red",
+                  end: "white"
+              },
+              color: {
+                  start: "white",
+                  end: "black"
+              }
+          }
+        }).play();
       }
 
     }catch(e)
@@ -178,19 +182,19 @@ var clearChatUI = function(){
     dijit.registry.byId('chatText').setAttribute('disabled',false);
     dijit.registry.byId('chatText').setValue('');
     dijit.registry.byId('chatBtn').setAttribute('disabled',false);
-    dojo.byId('chatWaitMessage').innerHTML = '';
+    dom.byId('chatWaitMessage').innerHTML = '';
   }catch(e){}
-  };
+};
 
 
 
 var onOpened = function() {
 
 
-    dojo.byId('setUserDiv').style.display = 'none';
+    dom.byId('setUserDiv').style.display = 'none';
 
 
-    dojo.byId('applicationArea').style.display = '';
+    dom.byId('applicationArea').style.display = '';
     dijit.registry.byId('applicationArea').resize();
     initGfx();
     //whiteboard.sendMessage({chatMessage:'I\'m here!'});
@@ -205,6 +209,10 @@ var onOpened = function() {
 
     whiteboard.pingServer();
     getUserList();
+    if(navigator.getUserMedia){
+      navigator.getUserMedia({video: true}, gotStream, noStream);
+    }
+
 
   };
 
@@ -219,44 +227,44 @@ var onOpened = function() {
     for(var i=0; i < chatMessageList.length; i++){
       messageListStr += chatMessageList[i];
     }
-    dojo.byId('output').innerHTML= messageListStr;
-    dojo.byId('output').scrollTop = dojo.byId('output').scrollHeight;
+    dom.byId('output').innerHTML= messageListStr;
+    dom.byId('output').scrollTop = dom.byId('output').scrollHeight;
 
   };
 
  var onMessage = function(obj) {
   console.log("onMessage", obj);
 
-  if(obj.chatMessage){
-    printChatMessage(obj);
-  }
-  if(obj.geometry && obj.geometry.shapeType){
-    obj.geometry.fromUser = obj.fromUser;
-    if(obj.fromUser != userName){
-      drawFromJSON(obj.geometry,whiteboard.drawing);
+    if(obj.chatMessage){
+      printChatMessage(obj);
     }
-  }
+    if(obj.geometry && obj.geometry.shapeType){
+      obj.geometry.fromUser = obj.fromUser;
+      if(obj.fromUser != userName){
+        drawFromJSON(obj.geometry,whiteboard.drawing);
+      }
+    }
 
-  if(obj.chatMessage || obj.geometry)
-  {
-    messageList.push(obj);
-  }
+    if(obj.chatMessage || obj.geometry)
+    {
+      messageList.push(obj);
+    }
 
-  if(obj.userList && (obj.userList.length > 0)){
-    populateUserList(obj.userList);
-  }
+    if(obj.userList && (obj.userList.length > 0)){
+      populateUserList(obj.userList);
+    }
 
-  if(obj.fromUser){
-    //animateUserItem(obj.fromUser);
-  }
+    if(obj.fromUser){
+      animateUserItem(obj.fromUser);
+    }
 
 
   };
 
 
  var initGfx = function(){
-    whiteboard.container = dojo.byId("whiteboardContainer");
-    whiteboard.overlayContainer = dojo.byId("whiteboardOverlayContainer");
+    whiteboard.container = dom.byId("whiteboardContainer");
+    whiteboard.overlayContainer = dom.byId("whiteboardOverlayContainer");
 
 
     whiteboard.drawing = dojox.gfx.createSurface(whiteboard.container, whiteboard.width, whiteboard.height);
@@ -264,7 +272,7 @@ var onOpened = function() {
 
 
     //for playback
-    whiteboard.movieContainer = dojo.byId("movieWhiteboardContainer");
+    whiteboard.movieContainer = dom.byId("movieWhiteboardContainer");
     whiteboard.movieDrawing = dojox.gfx.createSurface(whiteboard.movieContainer, whiteboard.width, whiteboard.height);
 
 
@@ -753,7 +761,7 @@ var doGfxMouseMove = function(evt)
         if(whiteboard.selectedShape && whiteboard.mouseDownPt){
           var ptDelta = {x: (pt.x - whiteboard.mouseDownPt.x),y: (pt.y - whiteboard.mouseDownPt.y)};
 
-          geom = createGeom.createGeom.move(whiteboard.selectedShape, ptDelta);
+          geom = createGeom.move(whiteboard.selectedShape, ptDelta);
 
           drawFromJSON(geom,whiteboard.drawing);
           //console.dir(geom);
@@ -853,7 +861,7 @@ var ptInBox = function(pt, box){
  var chooseColor = function(type) {
       var cp = dijit.registry.byId(type + 'ColorPaletteWidget');
       //console.log(cp);
-      dojo.style(dojo.byId(type + 'Swatch'),{backgroundColor: cp.value});
+      dojo.style(dom.byId(type + 'Swatch'),{backgroundColor: cp.value});
     whiteboard[type + 'Color'] = cp.value;
       dijit.popup.close(dijit.registry.byId(type + "ColorPaletteDialog"));
   };
@@ -863,18 +871,20 @@ var cancelChooseColor = function(type) {
 };
 
 var  sendChatMessage = function(){
-  var cwm = dojo.byId('chatWaitMessage');
+  var cwm = dom.byId('chatWaitMessage');
   var ct = dijit.registry.byId('chatText');
   var cb = dijit.registry.byId('chatBtn');
-  var msg = dojo.trim('' + ct.getValue());
+  var msg = cleanString(dojo.trim('' + ct.getValue()));
   if(msg == lastMessage){
     cwm.innerHTML = 'That\'s what you said last time.';
   }else if(msg){
     ct.setAttribute('disabled',true);
     cb.setAttribute('disabled',true);
     lastMessage = msg;
-    dojo.byId('chatWaitMessage').innerHTML = 'sending...';
-    whiteboard.sendMessage({chatMessage:msg});
+    dom.byId('chatWaitMessage').innerHTML = 'sending...';
+    var chatMessage = {chatMessage:msg, fromUser: userName};
+    whiteboard.sendMessage(chatMessage);
+    printChatMessage(chatMessage);
   }else{
     cwm.innerHTML = 'Cat got your tongue?';
   }
@@ -884,7 +894,7 @@ var  sendChatMessage = function(){
  var exportImage = function(){
   try{
 
-    dojo.byId("exportedImg").src = dojo.query('canvas',dojo.byId('applicationArea'))[0].toDataURL();
+    dom.byId("exportedImg").src = dojo.query('canvas',dom.byId('applicationArea'))[0].toDataURL();
     dijit.registry.byId("imgDialog").show();
 
   }catch(e){
@@ -895,7 +905,7 @@ var  sendChatMessage = function(){
  var exportMovieImage = function(){
     try{
 
-      dojo.byId("exportedImg").src = dojo.query('canvas',dojo.byId('movieDialog'))[0].toDataURL();
+      dom.byId("exportedImg").src = dojo.query('canvas',dom.byId('movieDialog'))[0].toDataURL();
       dijit.registry.byId("imgDialog").show();
 
     }catch(e){
@@ -944,7 +954,7 @@ var showMovie = function(){
       drawFromJSON(whiteboard.geomMessageList[i].geometry, whiteboard.movieDrawing);
     }
     if(indexEnd > 0){
-      dojo.byId('movieUser').innerHTML = whiteboard.geomMessageList[indexEnd - 1].fromUser;
+      dom.byId('movieUser').innerHTML = whiteboard.geomMessageList[indexEnd - 1].fromUser;
     }
 
   };
@@ -980,7 +990,7 @@ var showMovie = function(){
 
 
 var submitUserName = function(){
-    var unm = dojo.byId('subitUserNameMessage');
+    var unm = dom.byId('subitUserNameMessage');
     var unt = dijit.registry.byId('userNameText');
     var unb = dijit.registry.byId('userNameBtn');
     wbId = dijit.registry.byId('wbIdText').getValue();
@@ -991,11 +1001,12 @@ var submitUserName = function(){
       unt.setAttribute('disabled',true);
       unm.innerHTML = 'sending...';
 
-      userName = unt.getValue();
+      userName = cleanString(unt.getValue());
       wsrpc.methods.getWhiteBoard(wbId, userName).then(function(result){
        messageList = result.messages;
        //showResult(result,timeStart);
        wsrpc.socket.on('message',onMessage);
+       wsrpc.socket.on('users',populateUserList);
        onOpened();
 
       });
@@ -1004,11 +1015,19 @@ var submitUserName = function(){
     }
  };
 
+  function cleanString(str){
+    if(str){
+      str = String(str);
+      str = str.replace(/</g,'{').replace(/>/g,'}');
+      return str;
+    }
+  }
+
 
  var loadFunction = function(){
 
       dojo.connect(dijit.registry.byId('userNameBtn'),'onClick',submitUserName);
-      dojo.byId('setUserDiv').style.display = '';
+      dom.byId('setUserDiv').style.display = '';
       dojo.connect(dijit.registry.byId("userNameText"), 'onKeyDown', function(evt) {
          if(evt.keyCode == dojo.keys.ENTER) {
                 submitUserName();
@@ -1362,16 +1381,6 @@ function capture() {
     var img = document.createElement('img');
     img.src = canvas.toDataURL('image/png');
 }
-
-
-  navigator.getUserMedia({video: true}, gotStream, noStream);
-
-
-
-
-
-
-
 
 
 
