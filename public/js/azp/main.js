@@ -1,4 +1,7 @@
 define([
+  './wb/whiteboard',
+  './wb/getGfxMouse',
+  './wb/DNDFileController',
   'dojo/dom',
   'dojo/on',
   'wsrpc/client',
@@ -33,7 +36,22 @@ define([
 
 
   'dojo/domReady!'
-], function(dom,on,WsRpc, createGeom, parser, dijit, fx){
+], function(whiteboard, getGfxMouse, DNDFileController, dom, on, WsRpc, createGeom, parser, dijit, fx){
+
+navigator.getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.getUserMedia;
+window.URL = window.URL || window.webkitURL || window.mozURL;
+
+var chatMessageList = [];
+var geomMessageList = [];
+var messageList = [];
+var messageMax = 200;
+var wbId;
+var lastMessage = '';
+var userList = [];
+var messageListObj = null;
+
+
+var error = '';
 
 var selectTool = function(toolName)
   {
@@ -45,16 +63,13 @@ var selectTool = function(toolName)
 
     var tool = null;
     dojo.forEach(tools,function(aTool){
-        if(aTool.name == toolName){
-          tool = aTool;
-        }
-      //dojo.style(dijit.registry.byId(aTool.name + 'ToolBtn').domNode,'border','0px');
-        //dojo.addClass(dojo.style(dijit.registry.byId(aTool.name + 'ToolBtn').domNode, "selected");
-        dojo.removeClass(dijit.registry.byId(aTool.name + 'ToolBtn').domNode, "selected");
+      if(aTool.name == toolName){
+        tool = aTool;
+      }
+      dojo.removeClass(dijit.registry.byId(aTool.name + 'ToolBtn').domNode, "selected");
     });
 
-    //dojo.style(dijit.registry.byId(tool.name + 'ToolBtn').domNode,'border','2px solid black');
-        dojo.addClass(dijit.registry.byId(tool.name + 'ToolBtn').domNode, "selected");
+    dojo.addClass(dijit.registry.byId(tool.name + 'ToolBtn').domNode, "selected");
     whiteboard.tool = tool.name;
 
     if(tool.showLineColor){
@@ -89,24 +104,6 @@ var tools = [{name: 'line', showLineColor: true, showLineThickness: true},
       {name: 'moveDown'}
     ];
 
-var whiteboard = {
-  width : 700,
-  height : 400,
-  container : null,
-  drawing: null,
-  overlayContainer : null,
-  overlayDrawing: null,
-  lineColor : "#000000",
-  fillColor : "#FFFFFF",
-  lineStroke : 3,
-  fontSize : 12,
-  pingInterval : 180000,
-  userCheckInterval : 600000,
-  tool : 'pen',
-  points : [],
-  mouseDown : false
-
-};
 
 whiteboard.sendMessage = function(message){
 
@@ -123,7 +120,7 @@ whiteboard.sendMessage = function(message){
   whiteboard.pingServer = function() {
 
 
-    };
+  };
 
 
 
@@ -207,11 +204,9 @@ var onOpened = function() {
       }
     });
 
-    whiteboard.pingServer();
+    //whiteboard.pingServer();
     getUserList();
-    if(navigator.getUserMedia){
-      navigator.getUserMedia({video: true}, gotStream, noStream);
-    }
+
 
 
   };
@@ -308,7 +303,11 @@ var onOpened = function() {
 
      if(Modernizr.draganddrop){
        console.log('supports drag and drop!');
-       var dndc = new DNDFileController('whiteboardOverlayContainer');
+       var dndc = new DNDFileController('whiteboardOverlayContainer', function(imgJSON){
+          drawFromJSON(imgJSON,whiteboard.drawing);
+
+          whiteboard.sendMessage({geometry:imgJSON});
+       });
      }
 
   };
@@ -594,10 +593,7 @@ var moveShapeDown = function(geom, drawing){
 
   };
 
-var getGfxMouse = function(evt){
-    var coordsM = dojo.coords(whiteboard.container);
-    return {x: Math.round(evt.clientX - coordsM.x), y: Math.round(evt.clientY - coordsM.y)};
-};
+
 
 var  doGfxMouseDown = function(evt)
   {
@@ -938,13 +934,19 @@ var showMovie = function(){
   };
 
   var takePicture = function(){
-    console.log('take pic');
-    capture();
+    if(navigator.getUserMedia  && !whiteboard.hasStream){
+      navigator.getUserMedia({video: true}, gotStream, noStream);
+    }else if(navigator.getUserMedia){
+      console.log('take pic');
+      photoCtx.drawImage(video, 0, 0);
+      var img = document.createElement('img');
+      img.src = photoCanvas.toDataURL('image/png');
 
-    var bounds = {x1:100, y1:100, y2: 300, x2: 400};
-    var imgJSON = createGeom.image(bounds,canvas.toDataURL());
-    drawFromJSON(imgJSON,whiteboard.drawing);
-    whiteboard.sendMessage({geometry:imgJSON});
+      var bounds = {x1:100, y1:100, y2: 300, x2: 400};
+      var imgJSON = createGeom.image(bounds, photoCanvas.toDataURL());
+      drawFromJSON(imgJSON, whiteboard.drawing);
+      whiteboard.sendMessage({geometry:imgJSON});
+    }
   };
 
  var incrementMovie = function(){
@@ -1158,138 +1160,6 @@ var submitUserName = function(){
 
 
 
-function DNDFileController(id) {
-    var el_ = document.getElementById(id);
-    var thumbnails_ = document.getElementById('thumbnails');
-
-
-
-    this.dragenter = function(e) {
-      e.stopPropagation();
-      e.preventDefault();
-      el_.classList.add('rounded');
-    };
-
-    this.dragover = function(e) {
-      e.stopPropagation();
-      e.preventDefault();
-    };
-
-    this.dragleave = function(e) {
-      e.stopPropagation();
-      e.preventDefault();
-      el_.classList.remove('rounded');
-    };
-
-    this.drop = function(e) {
-
-    try{
-
-      //console.log('dropevent',e);
-
-      var pt = getGfxMouse(e);
-
-        e.stopPropagation();
-        e.preventDefault();
-
-        el_.classList.remove('rounded');
-
-        var files = e.dataTransfer.files;
-
-        for (var i = 0, file; file = files[i]; i++) {
-          var imageType = /image.*/;
-          if (!file.type.match(imageType)) {
-            continue;
-          }
-
-            // FileReader
-          var reader = new FileReader();
-
-          reader.onerror = function(evt) {
-             alert('Error code: ' + evt.target.error.code);
-          };
-          reader.onload = (function(aFile) {
-            return function(evt) {
-              if (evt.target.readyState == FileReader.DONE) {
-
-                console.log('rawImg',evt.target.result.length);
-                var img = new Image();
-                img.src = evt.target.result;
-                var imgData = img.src;
-                var newH, newW;
-
-                img.onload = function(){
-                  console.log(img.height, img.width);
-                  var maxDim = 200;
-                  //console.log(whiteboard);
-                  if(img.height > maxDim || img.width > maxDim){
-                    //need to scale
-
-
-                    if(img.width > img.height){
-                      newW = maxDim;
-                      newH = Math.round((maxDim * img.height) / img.width);
-                    }else{
-                      newH = maxDim;
-                      newW = Math.round((maxDim * img.width) / img.height);
-
-                    }
-
-                  }else{
-                    newH = img.height;
-                    newW = img.width;
-                  }
-
-
-                  var tempCanvas = document.createElement("canvas");
-                  tempCanvas.height = newH;
-                  tempCanvas.width = newW;
-                  var tempContext = tempCanvas.getContext("2d");
-                  tempContext.drawImage(img,0,0,newW,newH);
-
-                  var bounds = {x1:pt.x, y1:pt.y, x2: pt.x + newW, y2: pt.y + newH};
-                  var imgJSON = createGeom.image(bounds,tempCanvas.toDataURL());
-
-
-                  //console.log(imgJSON);
-
-                  drawFromJSON(imgJSON,whiteboard.drawing);
-
-                  whiteboard.sendMessage({geometry:imgJSON});
-
-
-
-                };
-
-              }
-            };
-          })(file);
-
-          reader.readAsDataURL(file);
-        }
-
-        return false;
-
-
-    }catch(dropE){
-      console.log('DnD error',dropE);
-    }
-    };
-
-
-    el_.addEventListener("dragenter", this.dragenter, false);
-    el_.addEventListener("dragover", this.dragover, false);
-    el_.addEventListener("dragleave", this.dragleave, false);
-    el_.addEventListener("drop", this.drop, false);
-  };
-
-
-
-
-
-
-
-
 
 
 
@@ -1309,36 +1179,14 @@ function DNDFileController(id) {
 
 
 
-navigator.getUserMedia = navigator.webkitGetUserMedia || navigator.getUserMedia;
-window.URL = window.URL || window.webkitURL;
+
 
 var app = document.getElementById('app');
 var video = document.getElementById('monitor');
-var canvas = document.getElementById('photo');
-var effect = document.getElementById('effect');
-var gallery = document.getElementById('gallery');
-var ctx = canvas.getContext('2d');
+var photoCanvas = document.getElementById('photo');
+var photoCtx = photoCanvas.getContext('2d');
 var intervalId = null;
 var idx = 0;
-var filters = [
-  'grayscale',
-  'sepia',
-  'blur',
-  'brightness',
-  'contrast',
-  'hue-rotate', 'hue-rotate2', 'hue-rotate3',
-  'saturate',
-  'invert',
-  ''
-];
-
-function changeFilter(el) {
-  el.className = '';
-  var effect = filters[idx++ % filters.length];
-  if (effect) {
-    el.classList.add(effect);
-  }
-}
 
 function gotStream(stream) {
   if (window.URL) {
@@ -1361,11 +1209,15 @@ function gotStream(stream) {
   // Since video.onloadedmetadata isn't firing for getUserMedia video, we have
   // to fake it.
   setTimeout(function() {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    photoCanvas.width = video.videoWidth;
+    photoCanvas.height = video.videoHeight;
     document.getElementById('splash').hidden = true;
     document.getElementById('app').hidden = false;
-  }, 50);
+    whiteboard.hasStream = true;
+    setTimeout(function() {
+      takePicture();
+    },100);
+  }, 100);
 }
 
 function noStream(e) {
@@ -1374,12 +1226,6 @@ function noStream(e) {
     msg = 'User denied access to use camera.';
   }
   document.getElementById('errorMessage').textContent = msg;
-}
-
-function capture() {
-    ctx.drawImage(video, 0, 0);
-    var img = document.createElement('img');
-    img.src = canvas.toDataURL('image/png');
 }
 
 

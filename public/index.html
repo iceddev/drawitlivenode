@@ -91,26 +91,7 @@
     <div id="main">
 
 
-<script>
 
-
-
-var chatMessageList = [];
-var geomMessageList = [];
-var messageList = [];
-var messageMax = 200;
-var wbId;
-var lastMessage = '';
-var userList = [];
-var messageListObj = null;
-
-
-var error = '';
-</script>
-<!-- <script src="/js/azp/WBCommon.js"></script> -->
-<!-- <script src="/js/azp/Whiteboard.js"></script> -->
-
-<!--<script src="/js/azp/BBCodeEditor.js"></script>-->
 
 <style>
 #header{
@@ -121,25 +102,6 @@ var error = '';
 
 #setUserDiv{
   text-align: center;
-}
-
-._webstore_badge {
-  width: 128px;
-  height: 190px;
-  top: 0px;
-  right: 0px;
-  position: absolute;
-  margin: 0 50px 0 50px;
-  padding: 5px;
-  box-shadow: #000 0 0 5px;
-  background-color: #eae88c;
-  border: solid 1px #c9c778;
-  border-bottom-left-radius: 5px;
-  border-bottom-right-radius: 5px;
-  display: inline;
-  font-family: Arial;
-  opacity: 1;
-  -webkit-transition: all 0.5s ease-in-out;
 }
 
 </style>
@@ -376,11 +338,11 @@ showButtons="false" style="width:500px;"></div><br> <button data-dojo-type="diji
 
 
 <section id="app" hidden>
-  <div class="container"><span id="live">LIVE</span><video id="monitor" autoplay onclick="changeFilter(this)" title="Click me to see different filters" style="height: 40px; width: 60px;"></video></div>
+  <div class="container"><span id="live">LIVE</span><video id="monitor" autoplay style="height: 40px; width: 60px;"></video></div>
  </section>
 
  <div id="splash">
-  <p id="errorMessage">&uarr;<br>Click to begin</p>
+  <p id="errorMessage">&uarr;<br></p>
  </div>
  <div id="gallery"></div>
 </article>

@@ -283,10 +283,14 @@ button {  width: auto; overflow: visible; }
 
 .chatMessage{
 	background-color: #EFEFEF;
-    border: 1px solid #CCCCCC;
+  border: 1px solid #CCCCCC;
 }
 
 .chatMessage .chatFrom{
 	color: #0000FF;
+}
+
+.selected{
+  border: 2px solid #00F !important;
 }
 
