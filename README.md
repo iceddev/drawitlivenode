@@ -1,10 +1,14 @@
-dojo-wsrpc-boilerplate
+Draw It Live - NodeJS version
 ========================
 
-A boilerplate for creating RPC/Websocket applications using dojo/AMD and socket.io with express
+An open source colaborative whiteboard/communication platform.
 
 
-be sure to run:
+You'll need to have volo and grunt installed to properly pull down dependencies and do a build of the javascript.
+
+`sudo npm install grunt volo -g`
+
+Then in the project folder:
 
 `npm install`
 
@@ -14,4 +18,6 @@ and:
 `volo install`
 
 
-to pull down server and client dependencies.
+You can launch the server with `node app.js`
+
+
