@@ -21,3 +21,8 @@ and:
 You can launch the server with `node app.js`
 
 
+If you want to compile the javascript into a single minified file:
+
+`grunt dojo`
+
+
