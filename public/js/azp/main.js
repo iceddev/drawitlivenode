@@ -53,39 +53,43 @@ var messageListObj = null;
 
 var error = '';
 
-var selectTool = function(toolName)
-  {
+var selectTool = function(toolName){
+  hide("lineColorDisplay");
+  hide("fillColorDisplay");
+  hide("lineStrokeSelect");
+  hide("fontSizeSelect");
 
-    hide("lineColorDisplay");
-    hide("fillColorDisplay");
-    hide("lineStrokeSelect");
-    hide("fontSizeSelect");
+  var tool = null;
+  dojo.forEach(tools,function(aTool){
+    if(aTool.name == toolName){
+      tool = aTool;
+    }
+    dojo.removeClass(dijit.registry.byId(aTool.name + 'ToolBtn').domNode, "selected");
+  });
 
-    var tool = null;
-    dojo.forEach(tools,function(aTool){
-      if(aTool.name == toolName){
-        tool = aTool;
-      }
-      dojo.removeClass(dijit.registry.byId(aTool.name + 'ToolBtn').domNode, "selected");
-    });
+  if(!tool){
+    return;
+  }
 
+  if(tool.name){
     dojo.addClass(dijit.registry.byId(tool.name + 'ToolBtn').domNode, "selected");
     whiteboard.tool = tool.name;
+  }
 
-    if(tool.showLineColor){
-      show("lineColorDisplay");
-    }
-    if(tool.showFillColor){
-      show("fillColorDisplay");
-    }
-    if(tool.showLineThickness){
-      show("lineStrokeSelect");
-    }
-    if(tool.showFontSize){
-      show("fontSizeSelect");
-    }
+  if(tool.showLineColor){
+    show("lineColorDisplay");
+  }
+  if(tool.showFillColor){
+    show("fillColorDisplay");
+  }
+  if(tool.showLineThickness){
+    show("lineStrokeSelect");
+  }
+  if(tool.showFontSize){
+    show("fontSizeSelect");
+  }
 
-  };
+};
 
 parser.parse().then(function(){
   selectTool('pen');
@@ -838,21 +842,21 @@ var ptInBox = function(pt, box){
 
 
 
- var hide = function(id){
+ function hide(id){
   try{
     dijit.registry.byId(id).domNode.style.display = 'none';
   }catch(e)
   {
   }
- };
+ }
 
- var show = function(id){
+ function show(id){
    try{
     dijit.registry.byId(id).domNode.style.display = '';
   }catch(e)
   {
   }
- };
+ }
 
  var chooseColor = function(type) {
       var cp = dijit.registry.byId(type + 'ColorPaletteWidget');

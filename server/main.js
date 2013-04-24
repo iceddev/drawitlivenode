@@ -1,29 +1,18 @@
 define([
   // Require in modules here
   'dojo/_base/config',
-  'dojo/node!express',
+  'dojo/node!ecstatic',
   'dojo/node!http',
   'dojo/node!path',
   'dojo/node!socket.io',
   'wsrpc'
-], function(config, express, http, path, socketio, wsrpc){
+], function(config, ecstatic, http, path, socketio, wsrpc){
 
-  var app = express();
-  var server = http.createServer(app);
+  var server = http.createServer(ecstatic({
+    root: config.baseUrl + '/public',
+    autoIndex: true
+  }));
   var io = socketio.listen(server);
-
-  app.configure(function(){
-    app.set('port', process.env.PORT || 3003);
-    app.use(express.favicon());
-    app.use(express.logger('dev'));
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
-    app.use(express.static(path.join(config.baseUrl, 'public')));
-  });
-
-  app.configure('development', function(){
-    app.use(express.errorHandler());
-  });
 
   var whiteboards = {};
   var maxAlive = 1000 * 60 * 60 * 24; // one day
@@ -110,8 +99,8 @@ define([
   //lisent on socket.io for incoming rpc requests
   wsrpc.listen(io);
 
-  server.listen(app.get('port'), function(){
-    console.log("Express server listening on port " + app.get('port'));
+  server.listen(3003, function(){
+    console.log("Express server listening on port " + 3003);
   });
 
 });
