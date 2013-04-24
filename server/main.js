@@ -5,9 +5,8 @@ define([
   'dojo/node!http',
   'dojo/node!path',
   'dojo/node!socket.io',
-  'wsrpc',
-  'server/routes/index'
-], function(config, express, http, path, socketio, wsrpc, routes){
+  'wsrpc'
+], function(config, express, http, path, socketio, wsrpc){
 
   var app = express();
   var server = http.createServer(app);
@@ -19,7 +18,6 @@ define([
     app.use(express.logger('dev'));
     app.use(express.bodyParser());
     app.use(express.methodOverride());
-    app.use(app.router);
     app.use(express.static(path.join(config.baseUrl, 'public')));
   });
 
