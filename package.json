@@ -19,7 +19,7 @@
     "jade": "*",
     "socket.io": ">= 0.9"
   },
-  "dojoBuild" : "wb.profile.js",
+  "dojoBuild": "wb.profile.js",
   "devDependencies": {
     "volo": "~0.2.9",
     "grunt": "~0.4.0",

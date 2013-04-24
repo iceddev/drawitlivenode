@@ -15,8 +15,6 @@ define([
 
   app.configure(function(){
     app.set('port', process.env.PORT || 3003);
-    app.set('views', path.join(config.baseUrl,'views'));
-    app.set('view engine', 'jade');
     app.use(express.favicon());
     app.use(express.logger('dev'));
     app.use(express.bodyParser());
@@ -28,8 +26,6 @@ define([
   app.configure('development', function(){
     app.use(express.errorHandler());
   });
-
-  app.get('/rpctest', routes.index);
 
   var whiteboards = {};
   var maxAlive = 1000 * 60 * 60 * 24; // one day
