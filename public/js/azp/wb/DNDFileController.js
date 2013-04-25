@@ -1,6 +1,6 @@
 define([
   './create-json',
-  './getGfxMouse'
+  '../getGfxMouse'
 ], function(createGeom, getGfxMouse){
 
   function DNDFileController(id, imgJSONcallback) {
