@@ -1,4 +1,5 @@
 define([
+  './sendMessage',
   './drawFromJson',
   './doGfxMouseUp',
   './doGfxMouseDown',
@@ -11,7 +12,7 @@ define([
   'dojo/dom-geometry',
   'dojox/gfx',
   'dojox/gfx/move'
-], function(drawFromJSON, doGfxMouseUp, doGfxMouseDown, doGfxMouseMove, whiteboard, DNDFileController, on, dom, domStyle, domGeom, gfx){
+], function(sendMessage, drawFromJSON, doGfxMouseUp, doGfxMouseDown, doGfxMouseMove, whiteboard, DNDFileController, on, dom, domStyle, domGeom, gfx){
 
   'use strict';
 
