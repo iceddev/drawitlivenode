@@ -12,11 +12,11 @@ define([
   'wsrpc/client',
   './wb/create-json',
   "dojo/parser",
-  'dijit',
+  'dijit/popup',
+  'dijit/registry',
   'dojo/_base/fx',
 
   'dijit/form/ValidationTextBox',
-  'dijit/registry',
   'dijit/form/TextBox',
   'dijit/form/Textarea',
   'dijit/form/Button',
@@ -40,49 +40,40 @@ define([
   "dijit/form/HorizontalSlider",
 
   'dojo/domReady!'
-], function(req, _, tools, selectTool, drawFromJSON, whiteboard, getGfxMouse, DNDFileController, dom, on, WsRpc, createGeom, parser, dijit, fx){
+], function(req, _, tools, selectTool, drawFromJSON, whiteboard, getGfxMouse, DNDFileController, dom, on, WsRpc, createGeom, parser, popup, registry, fx){
 
-var chatMessageList = [];
-var geomMessageList = [];
-var messageList = [];
-var messageMax = 200;
-var wbId;
-var lastMessage = '';
-var userList = [];
-var messageListObj = null;
+  var geomMessageList = [];
+  var messageList = [];
+  var messageMax = 200;
+  var wbId;
+  var lastMessage = '';
+  var userList = [];
+  var messageListObj = null;
 
-
-var error = '';
-
-parser.parse().then(function(){
-  selectTool('pen');
-  req(['./webrtc'], function(){});
-});
-
-whiteboard.sendMessage = function(message){
-
-  wsrpc.methods.sendMessage(wbId,message,userName).then(function(resp){
-    console.log("post response",resp);
-    if(resp.message){
-      messageList.push(resp.message);
-    }
-    clearChatUI();
+  parser.parse().then(function(){
+    selectTool('pen');
+    req(['./webrtc'], function(){});
   });
 
+  whiteboard.sendMessage = function(message){
+    wsrpc.methods.sendMessage(wbId,message,userName).then(function(resp){
+      console.log("post response",resp);
+      if(resp.message){
+        messageList.push(resp.message);
+      }
+      clearChatUI();
+    });
   };
 
- var getUserList = function() {
-
-  wsrpc.methods.getUsers(wbId).then(function(users){
-    populateUserList (users);
-  });
- };
+  var getUserList = function() {
+    wsrpc.methods.getUsers(wbId).then(populateUserList);
+  };
 
 var populateUserList = function(userList){
   if(userList && userList.length){
     try{
       var output = '';
-      dojo.forEach(userList,function(user){
+      _.forEach(userList,function(user){
         output += ('<span id=\"userListItem' + user + '\" style=\"background-color: #FFFFFF;\">' + user + '</span><br>');
       });
       dom.byId("userListDiv").innerHTML = output;
@@ -120,27 +111,25 @@ var animateUserItem = function(user){
 
   };
 
-var clearChatUI = function(){
-  try{
-    dijit.registry.byId('chatText').setAttribute('disabled',false);
-    dijit.registry.byId('chatText').setValue('');
-    dijit.registry.byId('chatBtn').setAttribute('disabled',false);
-    dom.byId('chatWaitMessage').innerHTML = '';
-  }catch(e){}
-};
+  var clearChatUI = function(){
+    try{
+      registry.byId('chatText').set('disabled', false);
+      registry.byId('chatText').set('value', '');
+      registry.byId('chatBtn').set('disabled', false);
+      dom.byId('chatWaitMessage').innerHTML = '';
+    }catch(e){}
+  };
 
-
-
-var onOpened = function() {
+  var onOpened = function() {
     dom.byId('setUserDiv').style.display = 'none';
 
     dom.byId('applicationArea').style.display = '';
-    dijit.registry.byId('applicationArea').resize();
+    registry.byId('applicationArea').resize();
     initGfx();
-    dojo.connect(dijit.registry.byId('chatBtn'),'onClick',sendChatMessage);
+    dojo.connect(registry.byId('chatBtn'),'onClick',sendChatMessage);
 
     //display any saved messages
-    dojo.forEach(messageList,function(m){
+    _.forEach(messageList, function(m){
       if(m.chatMessage){
         printChatMessage(m);
       }
@@ -149,17 +138,8 @@ var onOpened = function() {
     getUserList();
   };
 
- var printChatMessage = function(message){
-    chatMessageList.push('<pre class=\"chatMessage\"><span class=\"chatFrom\">' + message.fromUser + '</span>: ' + message.chatMessage + '</pre><br>');
-    if(chatMessageList.length > messageMax){
-      chatMessageList.shift();
-    }
-
-    var messageListStr = '';
-    for(var i=0; i < chatMessageList.length; i++){
-      messageListStr += chatMessageList[i];
-    }
-    dom.byId('output').innerHTML= messageListStr;
+  var printChatMessage = function(message){
+    dom.byId('output').innerHTML += '<pre class=\"chatMessage\"><span class=\"chatFrom\">' + message.fromUser + '</span>: ' + message.chatMessage + '</pre><br>';
     dom.byId('output').scrollTop = dom.byId('output').scrollHeight;
   };
 
@@ -202,7 +182,7 @@ var onOpened = function() {
     whiteboard.movieDrawing = dojox.gfx.createSurface(whiteboard.movieContainer, whiteboard.width, whiteboard.height);
 
     //draw any saved objects
-    dojo.forEach(messageList,function(m){
+    _.forEach(messageList,function(m){
       if(m.geometry){
         m.geometry.fromUser = m.fromUser;
        drawFromJSON(m.geometry, whiteboard.drawing);
@@ -241,12 +221,9 @@ var onOpened = function() {
   };
 
   var createOffsetBB = function(origBB, pointInBB, newPt){
-    //console.log('offset',origBB, pointInBB, newPt);
-
     var xDelta = Math.abs(pointInBB.x - origBB.x1);
     var yDelta = Math.abs(pointInBB.y - origBB.y1);
 
-    //console.log('deltas',xDelta,yDelta);
     var bounds = {
       x1: (newPt.x - xDelta),
       y1: (newPt.y - yDelta)
@@ -268,7 +245,6 @@ var onOpened = function() {
 
   var doGfxMouseDown = function(evt){
     var pt = getGfxMouse(evt);
-    //console.dir(pt);
     if(pointInDrawing(pt)){
       whiteboard.mouseDownPt = pt;
       whiteboard.points = [pt];
@@ -276,7 +252,7 @@ var onOpened = function() {
 
       whiteboard.selectedShape = getHoveredShape(whiteboard.drawing,pt);
     }
- };
+  };
 
   var doGfxMouseMove = function(evt){
     var pt = getGfxMouse(evt);
@@ -328,7 +304,6 @@ var onOpened = function() {
             geom = createGeom.moveOverlay(whiteboard.selectedShape.wbbb);
             drawFromJSON(geom,whiteboard.overlayDrawing);
             var offBB = createOffsetBB(whiteboard.selectedShape.wbbb,whiteboard.mouseDownPt,pt);
-            //console.dir(offBB);
             var geom2 = createGeom.moveOverlay(offBB);
 
             drawFromJSON(geom2,whiteboard.overlayDrawing);
@@ -375,7 +350,6 @@ var onOpened = function() {
   var doGfxMouseUp = function(evt) {
     var pt = getGfxMouse(evt);
     whiteboard.mouseDown = false;
-    //console.dir(pt);
 
     //always clear the overlay
     whiteboard.overlayDrawing.clear();
@@ -383,8 +357,6 @@ var onOpened = function() {
     if(whiteboard.mouseDownPt){
       //make sure mouse was released inside of drawing area
       if(pointInDrawing(pt)){
-
-        //console.dir(whiteboard.mouseDownPt);
 
         var bounds = {x1:whiteboard.mouseDownPt.x, y1:whiteboard.mouseDownPt.y, x2: pt.x, y2: pt.y};
 
@@ -415,14 +387,12 @@ var onOpened = function() {
             drawFromJSON(geom,whiteboard.drawing);
           }
         }else if(whiteboard.tool == 'move'){
-          //console.log(whiteboard.selectedShape,whiteboard.mouseDownPt,bounds);
           if(whiteboard.selectedShape && whiteboard.mouseDownPt){
             var ptDelta = {x: (pt.x - whiteboard.mouseDownPt.x),y: (pt.y - whiteboard.mouseDownPt.y)};
 
             geom = createGeom.move(whiteboard.selectedShape, ptDelta);
 
             drawFromJSON(geom,whiteboard.drawing);
-            //console.dir(geom);
           }
 
         }else if(whiteboard.tool == 'moveUp'){
@@ -439,13 +409,9 @@ var onOpened = function() {
           }
         }else if(whiteboard.tool == 'text'){
           whiteboard.textPoint = pt;
-          dijit.registry.byId('textDialog').show();
-          dijit.registry.byId('wbText').focus();
-
+          registry.byId('textDialog').show();
+          registry.byId('wbText').focus();
         }
-
-
-        //whiteboard.points = [];
 
         if(geom){
           whiteboard.sendMessage({geometry:geom});
@@ -464,7 +430,6 @@ var onOpened = function() {
   };
 
 var getHoveredShape = function(drawing, pt){
-
   try{
     var children = drawing.children;
     if(children){
@@ -480,7 +445,6 @@ var getHoveredShape = function(drawing, pt){
   }
 
   return null;
-
 };
 
 var ptInBox = function(pt, box){
@@ -497,21 +461,21 @@ var ptInBox = function(pt, box){
 };
 
  var chooseColor = function(type) {
-      var cp = dijit.registry.byId(type + 'ColorPaletteWidget');
+      var cp = registry.byId(type + 'ColorPaletteWidget');
       //console.log(cp);
       dojo.style(dom.byId(type + 'Swatch'),{backgroundColor: cp.value});
     whiteboard[type + 'Color'] = cp.value;
-      dijit.popup.close(dijit.registry.byId(type + "ColorPaletteDialog"));
+      popup.close(registry.byId(type + "ColorPaletteDialog"));
   };
 
 var cancelChooseColor = function(type) {
-  dijit.popup.close(dijit.registry.byId(type + "ColorPaletteDialog"));
+  popup.close(registry.byId(type + "ColorPaletteDialog"));
 };
 
 var  sendChatMessage = function(){
   var cwm = dom.byId('chatWaitMessage');
-  var ct = dijit.registry.byId('chatText');
-  var cb = dijit.registry.byId('chatBtn');
+  var ct = registry.byId('chatText');
+  var cb = registry.byId('chatBtn');
   var msg = _.escape(dojo.trim('' + ct.getValue()));
   if(msg == lastMessage){
     cwm.innerHTML = 'That\'s what you said last time.';
@@ -533,7 +497,7 @@ var  sendChatMessage = function(){
   try{
 
     dom.byId("exportedImg").src = dojo.query('canvas',dom.byId('applicationArea'))[0].toDataURL();
-    dijit.registry.byId("imgDialog").show();
+    registry.byId("imgDialog").show();
 
   }catch(e){
     console.info("canvas not supported",e);
@@ -544,7 +508,7 @@ var  sendChatMessage = function(){
     try{
 
       dom.byId("exportedImg").src = dojo.query('canvas',dom.byId('movieDialog'))[0].toDataURL();
-      dijit.registry.byId("imgDialog").show();
+      registry.byId("imgDialog").show();
 
     }catch(e){
       console.info("canvas not supported",e);
@@ -554,17 +518,17 @@ var  sendChatMessage = function(){
 var showMovie = function(){
     try{
 
-      dijit.registry.byId("movieDialog").show();
+      registry.byId("movieDialog").show();
 
       if(messageList){
         whiteboard.geomMessageList = [];
-        dojo.forEach(messageList,function(m){
+        _.forEach(messageList,function(m){
           if(m.geometry){
             whiteboard.geomMessageList.push(m);
           }
         });
       }
-      var mSlider = dijit.registry.byId('movieSlider');
+      var mSlider = registry.byId('movieSlider');
       mSlider.setAttribute('maximum',whiteboard.geomMessageList.length);
       mSlider.setAttribute('discreteValues',whiteboard.geomMessageList.length);
 
@@ -576,7 +540,7 @@ var showMovie = function(){
   };
 
  var incrementMovie = function(){
-    var indexEnd = Math.round(dijit.registry.byId('movieSlider').getValue());
+    var indexEnd = Math.round(registry.byId('movieSlider').getValue());
     whiteboard.movieDrawing.clear();
     for(var i =0; i < indexEnd; i++){
       drawFromJSON(whiteboard.geomMessageList[i].geometry, whiteboard.movieDrawing);
@@ -588,16 +552,16 @@ var showMovie = function(){
   };
 
   var doCancelAddText = function(){
-    dijit.registry.byId('wbText').setValue('');
-    dijit.registry.byId('textDialog').hide();
+    registry.byId('wbText').setValue('');
+    registry.byId('textDialog').hide();
     whiteboard.overlayDrawing.clear();
     whiteboard.textPoint = null;
   };
 
   var doAddText = function(){
-    var text = dijit.registry.byId('wbText').getValue();
+    var text = registry.byId('wbText').getValue();
     if((text != '') && (whiteboard.textPoint)){
-      dijit.registry.byId('textDialog').hide();
+      registry.byId('textDialog').hide();
       var geom = createGeom.text(whiteboard.textPoint, text, whiteboard.fontSize, whiteboard.lineColor);
       drawFromJSON(geom,whiteboard.drawing);
       whiteboard.textPoint = null;
@@ -608,7 +572,7 @@ var showMovie = function(){
 
   var doIncrementalText = function(){
     whiteboard.overlayDrawing.clear();
-    var text = dijit.registry.byId('wbText').getValue();
+    var text = registry.byId('wbText').getValue();
     if((text != '') && (whiteboard.textPoint)){
       var geom = createGeom.text(whiteboard.textPoint, text, whiteboard.fontSize, whiteboard.lineColor);
       drawFromJSON(geom,whiteboard.overlayDrawing);
@@ -619,9 +583,9 @@ var showMovie = function(){
 
 var submitUserName = function(){
     var unm = dom.byId('subitUserNameMessage');
-    var unt = dijit.registry.byId('userNameText');
-    var unb = dijit.registry.byId('userNameBtn');
-    wbId = dijit.registry.byId('wbIdText').getValue();
+    var unt = registry.byId('userNameText');
+    var unb = registry.byId('userNameBtn');
+    wbId = registry.byId('wbIdText').getValue();
     if(!unt.isValid()){
       unm.innerHTML = 'Invalid user name';
     }else{
@@ -645,106 +609,106 @@ var submitUserName = function(){
 
  var loadFunction = function(){
 
-      dojo.connect(dijit.registry.byId('userNameBtn'),'onClick',submitUserName);
+      dojo.connect(registry.byId('userNameBtn'),'onClick',submitUserName);
       dom.byId('setUserDiv').style.display = '';
-      dojo.connect(dijit.registry.byId("userNameText"), 'onKeyDown', function(evt) {
+      dojo.connect(registry.byId("userNameText"), 'onKeyDown', function(evt) {
          if(evt.keyCode == dojo.keys.ENTER) {
                 submitUserName();
           }
       });
 
 
-  dojo.connect(dijit.registry.byId('lineColorPaletteOkBtn'),'onClick',function(){
+  dojo.connect(registry.byId('lineColorPaletteOkBtn'),'onClick',function(){
     chooseColor('line');
   });
-  dojo.connect(dijit.registry.byId('lineColorPaletteCancelBtn'),'onClick',function(){
+  dojo.connect(registry.byId('lineColorPaletteCancelBtn'),'onClick',function(){
     cancelChooseColor('line');
   });
 
-  dojo.connect(dijit.registry.byId('fillColorPaletteOkBtn'),'onClick',function(){
+  dojo.connect(registry.byId('fillColorPaletteOkBtn'),'onClick',function(){
     chooseColor('fill');
   });
-  dojo.connect(dijit.registry.byId('fillColorPaletteCancelBtn'),'onClick',function(){
+  dojo.connect(registry.byId('fillColorPaletteCancelBtn'),'onClick',function(){
     cancelChooseColor('fill');
   });
 
   if(Modernizr.canvas)
   {
-    dojo.connect(dijit.registry.byId('exportImgBtn'),'onClick',exportImage);
-    dojo.connect(dijit.registry.byId('exportMovieImgBtn'),'onClick',exportMovieImage);
+    dojo.connect(registry.byId('exportImgBtn'),'onClick',exportImage);
+    dojo.connect(registry.byId('exportMovieImgBtn'),'onClick',exportMovieImage);
   }else{
-    dojo.style(dijit.registry.byId('exportImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
-    dojo.style(dijit.registry.byId('exportMovieImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
+    dojo.style(registry.byId('exportImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
+    dojo.style(registry.byId('exportMovieImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
   }
 
-  dojo.connect(dijit.registry.byId('showMovieBtn'),'onClick',showMovie);
+  dojo.connect(registry.byId('showMovieBtn'),'onClick',showMovie);
 
-  dojo.connect(dijit.registry.byId('movieSlider'),'onChange',incrementMovie);
+  dojo.connect(registry.byId('movieSlider'),'onChange',incrementMovie);
 
 
 
-  dojo.connect(dijit.registry.byId('lineStrokeSelect'),'onChange',function(){
-    whiteboard.lineStroke = Math.floor(1.0 * dijit.registry.byId('lineStrokeSelect').getValue());
+  dojo.connect(registry.byId('lineStrokeSelect'),'onChange',function(){
+    whiteboard.lineStroke = Math.floor(1.0 * registry.byId('lineStrokeSelect').getValue());
   });
 
-  dojo.connect(dijit.registry.byId('fontSizeSelect'),'onChange',function(){
-    whiteboard.fontSize = Math.floor(1.0 * dijit.registry.byId('fontSizeSelect').getValue());
+  dojo.connect(registry.byId('fontSizeSelect'),'onChange',function(){
+    whiteboard.fontSize = Math.floor(1.0 * registry.byId('fontSizeSelect').getValue());
   });
 
-  dojo.connect(dijit.registry.byId('clearDrawingNoBtn'),'onClick',function(){
-    dijit.popup.close(dijit.registry.byId("clearDrawingDialog"));
+  dojo.connect(registry.byId('clearDrawingNoBtn'),'onClick',function(){
+    popup.close(registry.byId("clearDrawingDialog"));
   });
 
-  dojo.connect(dijit.registry.byId('clearDrawingYesBtn'),'onClick',function(){
-    dijit.popup.close(dijit.registry.byId("clearDrawingDialog"));
+  dojo.connect(registry.byId('clearDrawingYesBtn'),'onClick',function(){
+    popup.close(registry.byId("clearDrawingDialog"));
     var geom = createClearDrawingJSON();
     whiteboard.sendMessage({geometry: geom });
     drawFromJSON(geom,whiteboard.drawing);
 
   });
 
-  dojo.connect(dijit.registry.byId('sendMailButton'),'onClick',function(){
+  dojo.connect(registry.byId('sendMailButton'),'onClick',function(){
 
     sendEmail();
 
   });
 
   dojo.forEach(tools,function(tool){
-    dojo.connect(dijit.registry.byId(tool.name + 'ToolBtn'),'onClick',function(){
+    dojo.connect(registry.byId(tool.name + 'ToolBtn'),'onClick',function(){
       selectTool(tool.name);
     });
   });
 
-    dojo.connect(dijit.registry.byId("wbText"), 'onKeyDown', function(evt) {
+    dojo.connect(registry.byId("wbText"), 'onKeyDown', function(evt) {
           if(evt.keyCode == dojo.keys.ENTER) {
             doAddText();
       }
      });
 
-     dojo.connect(dijit.registry.byId("okTextBtn"), 'onClick', function(evt) {
+     dojo.connect(registry.byId("okTextBtn"), 'onClick', function(evt) {
           doAddText();
      });
 
-     dojo.connect(dijit.registry.byId("cancelTextBtn"), 'onClick', function(evt) {
+     dojo.connect(registry.byId("cancelTextBtn"), 'onClick', function(evt) {
           doCancelAddText();
      });
 
-     dojo.connect(dijit.registry.byId("wbText"), 'onKeyUp', function(evt) {
+     dojo.connect(registry.byId("wbText"), 'onKeyUp', function(evt) {
           doIncrementalText();
      });
 
-     dojo.connect(dijit.registry.byId("wbText"), 'onChange', function(evt) {
+     dojo.connect(registry.byId("wbText"), 'onChange', function(evt) {
           doIncrementalText();
      });
 
-     dojo.connect(dijit.registry.byId("textDialog"), 'onClose', function(evt) {
+     dojo.connect(registry.byId("textDialog"), 'onClose', function(evt) {
       whiteboard.overlayDrawing.clear();
-      dijit.registry.byId("wbText").setValue('');
+      registry.byId("wbText").setValue('');
      });
 
-     dojo.connect(dijit.registry.byId("textDialog"), 'onHide', function(evt) {
+     dojo.connect(registry.byId("textDialog"), 'onHide', function(evt) {
       whiteboard.overlayDrawing.clear();
-      dijit.registry.byId("wbText").setValue('');
+      registry.byId("wbText").setValue('');
      });
 
      try{
@@ -755,16 +719,11 @@ var submitUserName = function(){
 
        function onDrop(e) {
          reader.readAsDataURL(e.dataTransfer.files[0]);
-       };
-
-     }catch(imgE){
-
-
-     }
-};
+       }
+     } catch(imgE){}
+  };
 
   var wsrpc = new WsRpc(io.connect('/'));
-  window.wsrpc = wsrpc; //export global to play with in web dev tools
 
   loadFunction();
 
