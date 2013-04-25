@@ -8,7 +8,6 @@ define([
   './wb/getGfxMouse',
   './wb/DNDFileController',
   'dojo/dom',
-  'dojo/on',
   'wsrpc/client',
   './wb/create-json',
   "dojo/parser",
@@ -40,7 +39,7 @@ define([
   "dijit/form/HorizontalSlider",
 
   'dojo/domReady!'
-], function(req, _, tools, selectTool, drawFromJSON, whiteboard, getGfxMouse, DNDFileController, dom, on, WsRpc, createGeom, parser, popup, registry, fx){
+], function(req, _, tools, selectTool, drawFromJSON, whiteboard, getGfxMouse, DNDFileController, dom, WsRpc, createGeom, parser, popup, registry, fx){
 
   var geomMessageList = [];
   var messageList = [];
@@ -69,22 +68,22 @@ define([
     wsrpc.methods.getUsers(wbId).then(populateUserList);
   };
 
-var populateUserList = function(userList){
-  if(userList && userList.length){
-    try{
-      var output = '';
-      _.forEach(userList,function(user){
-        output += ('<span id=\"userListItem' + user + '\" style=\"background-color: #FFFFFF;\">' + user + '</span><br>');
-      });
-      dom.byId("userListDiv").innerHTML = output;
-    }catch(e){
-      console.info("error filling user list div",e);
+  var populateUserList = function(userList){
+    if(userList && userList.length){
+      try{
+        var output = '';
+        _.forEach(userList,function(user){
+          output += ('<span id=\"userListItem' + user + '\" style=\"background-color: #FFFFFF;\">' + user + '</span><br>');
+        });
+        dom.byId("userListDiv").innerHTML = output;
+      }catch(e){
+        console.info("error filling user list div",e);
+      }
+      animateUserItem(userList[userList.length - 1]);
     }
-    animateUserItem(userList[userList.length - 1]);
-  }
-};
+  };
 
-var animateUserItem = function(user){
+  var animateUserItem = function(user){
     try{
       var userNode = dom.byId("userListItem" + user);
       if(userNode){
@@ -103,12 +102,9 @@ var animateUserItem = function(user){
           }
         }).play();
       }
-
-    }catch(e)
-    {
+    }catch(e){
       console.info("couldn\'t animate " + user, e);
     }
-
   };
 
   var clearChatUI = function(){
@@ -429,82 +425,77 @@ var animateUserItem = function(user){
     whiteboard.points = [];
   };
 
-var getHoveredShape = function(drawing, pt){
-  try{
-    var children = drawing.children;
-    if(children){
-      for(var i = children.length; i > 0; i--){
-        var child = children[i - 1];
-        if(ptInBox(pt,child.wbbb)){
-          return child;
+  var getHoveredShape = function(drawing, pt){
+    try{
+      var children = drawing.children;
+      if(children){
+        for(var i = children.length; i > 0; i--){
+          var child = children[i - 1];
+          if(ptInBox(pt,child.wbbb)){
+            return child;
+          }
         }
       }
+    }catch(e){
+      console.log('error finding shape',e);
     }
-  }catch(e){
-    console.log('error finding shape',e);
-  }
 
-  return null;
-};
+    return null;
+  };
 
-var ptInBox = function(pt, box){
-  if(pt && box){
-    if((pt.x >= box.x1) && (pt.x <= box.x2) && (pt.y >= box.y1) && (pt.y <= box.y2)){
-      return true;
+  var ptInBox = function(pt, box){
+    if(pt && box){
+      if((pt.x >= box.x1) && (pt.x <= box.x2) && (pt.y >= box.y1) && (pt.y <= box.y2)){
+        return true;
+      }else{
+        return false;
+      }
     }else{
       return false;
     }
-  }else{
-    return false;
-  }
-
-};
-
- var chooseColor = function(type) {
-      var cp = registry.byId(type + 'ColorPaletteWidget');
-      //console.log(cp);
-      dojo.style(dom.byId(type + 'Swatch'),{backgroundColor: cp.value});
-    whiteboard[type + 'Color'] = cp.value;
-      popup.close(registry.byId(type + "ColorPaletteDialog"));
   };
 
-var cancelChooseColor = function(type) {
-  popup.close(registry.byId(type + "ColorPaletteDialog"));
-};
+  var chooseColor = function(type) {
+    var cp = registry.byId(type + 'ColorPaletteWidget');
+    dojo.style(dom.byId(type + 'Swatch'),{backgroundColor: cp.value});
+    whiteboard[type + 'Color'] = cp.value;
+    popup.close(registry.byId(type + "ColorPaletteDialog"));
+  };
 
-var  sendChatMessage = function(){
-  var cwm = dom.byId('chatWaitMessage');
-  var ct = registry.byId('chatText');
-  var cb = registry.byId('chatBtn');
-  var msg = _.escape(dojo.trim('' + ct.getValue()));
-  if(msg == lastMessage){
-    cwm.innerHTML = 'That\'s what you said last time.';
-  }else if(msg){
-    ct.setAttribute('disabled',true);
-    cb.setAttribute('disabled',true);
-    lastMessage = msg;
-    dom.byId('chatWaitMessage').innerHTML = 'sending...';
-    var chatMessage = {chatMessage:msg, fromUser: userName};
-    whiteboard.sendMessage(chatMessage);
-    printChatMessage(chatMessage);
-  }else{
-    cwm.innerHTML = 'Cat got your tongue?';
-  }
+  var cancelChooseColor = function(type) {
+    popup.close(registry.byId(type + "ColorPaletteDialog"));
+  };
 
-};
+  var sendChatMessage = function(){
+    var cwm = dom.byId('chatWaitMessage');
+    var ct = registry.byId('chatText');
+    var cb = registry.byId('chatBtn');
+    var msg = _.escape(dojo.trim('' + ct.getValue()));
+    if(msg == lastMessage){
+      cwm.innerHTML = 'That\'s what you said last time.';
+    }else if(msg){
+      ct.setAttribute('disabled',true);
+      cb.setAttribute('disabled',true);
+      lastMessage = msg;
+      dom.byId('chatWaitMessage').innerHTML = 'sending...';
+      var chatMessage = {chatMessage:msg, fromUser: userName};
+      whiteboard.sendMessage(chatMessage);
+      printChatMessage(chatMessage);
+    }else{
+      cwm.innerHTML = 'Cat got your tongue?';
+    }
+  };
 
  var exportImage = function(){
   try{
-
     dom.byId("exportedImg").src = dojo.query('canvas',dom.byId('applicationArea'))[0].toDataURL();
     registry.byId("imgDialog").show();
-
-  }catch(e){
-    console.info("canvas not supported",e);
-  }
+    }catch(e){
+      console.info("canvas not supported",e);
+    }
   };
 
- var exportMovieImage = function(){
+  var exportMovieImage = function(){
     try{
 
       dom.byId("exportedImg").src = dojo.query('canvas',dom.byId('movieDialog'))[0].toDataURL();
@@ -513,11 +504,10 @@ var  sendChatMessage = function(){
     }catch(e){
       console.info("canvas not supported",e);
     }
-};
+  };
 
-var showMovie = function(){
+  var showMovie = function(){
     try{
-
       registry.byId("movieDialog").show();
 
       if(messageList){
@@ -533,13 +523,12 @@ var showMovie = function(){
       mSlider.setAttribute('discreteValues',whiteboard.geomMessageList.length);
 
       mSlider.setValue(0);
-
     }catch(e){
       console.info("canvas not supported",e);
     }
   };
 
- var incrementMovie = function(){
+  var incrementMovie = function(){
     var indexEnd = Math.round(registry.byId('movieSlider').getValue());
     whiteboard.movieDrawing.clear();
     for(var i =0; i < indexEnd; i++){
@@ -548,7 +537,6 @@ var showMovie = function(){
     if(indexEnd > 0){
       dom.byId('movieUser').innerHTML = whiteboard.geomMessageList[indexEnd - 1].fromUser;
     }
-
   };
 
   var doCancelAddText = function(){
@@ -577,113 +565,95 @@ var showMovie = function(){
       var geom = createGeom.text(whiteboard.textPoint, text, whiteboard.fontSize, whiteboard.lineColor);
       drawFromJSON(geom,whiteboard.overlayDrawing);
     }
-
   };
 
-
-var submitUserName = function(){
+  var submitUserName = function(){
     var unm = dom.byId('subitUserNameMessage');
     var unt = registry.byId('userNameText');
     var unb = registry.byId('userNameBtn');
     wbId = registry.byId('wbIdText').getValue();
     if(!unt.isValid()){
       unm.innerHTML = 'Invalid user name';
-    }else{
+    } else {
       unb.setAttribute('disabled',true);
       unt.setAttribute('disabled',true);
       unm.innerHTML = 'sending...';
 
       userName = _.escape(unt.getValue());
       wsrpc.methods.getWhiteBoard(wbId, userName).then(function(result){
-       messageList = result.messages;
-       //showResult(result,timeStart);
-       wsrpc.socket.on('message',onMessage);
-       wsrpc.socket.on('users',populateUserList);
-       onOpened();
-
+        messageList = result.messages;
+        wsrpc.socket.on('message', onMessage);
+        wsrpc.socket.on('users', populateUserList);
+        onOpened();
       });
-
-
     }
- };
+  };
 
- var loadFunction = function(){
-
-      dojo.connect(registry.byId('userNameBtn'),'onClick',submitUserName);
-      dom.byId('setUserDiv').style.display = '';
-      dojo.connect(registry.byId("userNameText"), 'onKeyDown', function(evt) {
-         if(evt.keyCode == dojo.keys.ENTER) {
-                submitUserName();
-          }
-      });
-
-
-  dojo.connect(registry.byId('lineColorPaletteOkBtn'),'onClick',function(){
-    chooseColor('line');
-  });
-  dojo.connect(registry.byId('lineColorPaletteCancelBtn'),'onClick',function(){
-    cancelChooseColor('line');
-  });
-
-  dojo.connect(registry.byId('fillColorPaletteOkBtn'),'onClick',function(){
-    chooseColor('fill');
-  });
-  dojo.connect(registry.byId('fillColorPaletteCancelBtn'),'onClick',function(){
-    cancelChooseColor('fill');
-  });
-
-  if(Modernizr.canvas)
-  {
-    dojo.connect(registry.byId('exportImgBtn'),'onClick',exportImage);
-    dojo.connect(registry.byId('exportMovieImgBtn'),'onClick',exportMovieImage);
-  }else{
-    dojo.style(registry.byId('exportImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
-    dojo.style(registry.byId('exportMovieImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
-  }
-
-  dojo.connect(registry.byId('showMovieBtn'),'onClick',showMovie);
-
-  dojo.connect(registry.byId('movieSlider'),'onChange',incrementMovie);
-
-
-
-  dojo.connect(registry.byId('lineStrokeSelect'),'onChange',function(){
-    whiteboard.lineStroke = Math.floor(1.0 * registry.byId('lineStrokeSelect').getValue());
-  });
-
-  dojo.connect(registry.byId('fontSizeSelect'),'onChange',function(){
-    whiteboard.fontSize = Math.floor(1.0 * registry.byId('fontSizeSelect').getValue());
-  });
-
-  dojo.connect(registry.byId('clearDrawingNoBtn'),'onClick',function(){
-    popup.close(registry.byId("clearDrawingDialog"));
-  });
-
-  dojo.connect(registry.byId('clearDrawingYesBtn'),'onClick',function(){
-    popup.close(registry.byId("clearDrawingDialog"));
-    var geom = createClearDrawingJSON();
-    whiteboard.sendMessage({geometry: geom });
-    drawFromJSON(geom,whiteboard.drawing);
-
-  });
-
-  dojo.connect(registry.byId('sendMailButton'),'onClick',function(){
-
-    sendEmail();
-
-  });
-
-  dojo.forEach(tools,function(tool){
-    dojo.connect(registry.byId(tool.name + 'ToolBtn'),'onClick',function(){
-      selectTool(tool.name);
+  var loadFunction = function(){
+    dojo.connect(registry.byId('userNameBtn'),'onClick',submitUserName);
+    dom.byId('setUserDiv').style.display = '';
+    dojo.connect(registry.byId("userNameText"), 'onKeyDown', function(evt) {
+      if(evt.keyCode == dojo.keys.ENTER) {
+        submitUserName();
+      }
     });
-  });
+
+    dojo.connect(registry.byId('lineColorPaletteOkBtn'),'onClick',function(){
+      chooseColor('line');
+    });
+    dojo.connect(registry.byId('lineColorPaletteCancelBtn'),'onClick',function(){
+      cancelChooseColor('line');
+    });
+
+    dojo.connect(registry.byId('fillColorPaletteOkBtn'),'onClick',function(){
+      chooseColor('fill');
+    });
+    dojo.connect(registry.byId('fillColorPaletteCancelBtn'),'onClick',function(){
+      cancelChooseColor('fill');
+    });
+
+    if(Modernizr.canvas){
+      dojo.connect(registry.byId('exportImgBtn'),'onClick',exportImage);
+      dojo.connect(registry.byId('exportMovieImgBtn'),'onClick',exportMovieImage);
+    } else {
+      dojo.style(registry.byId('exportImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
+      dojo.style(registry.byId('exportMovieImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
+    }
+
+    dojo.connect(registry.byId('showMovieBtn'),'onClick',showMovie);
+
+    dojo.connect(registry.byId('movieSlider'),'onChange',incrementMovie);
+
+    dojo.connect(registry.byId('lineStrokeSelect'),'onChange',function(){
+      whiteboard.lineStroke = Math.floor(1.0 * registry.byId('lineStrokeSelect').getValue());
+    });
+
+    dojo.connect(registry.byId('fontSizeSelect'),'onChange',function(){
+      whiteboard.fontSize = Math.floor(1.0 * registry.byId('fontSizeSelect').getValue());
+    });
+
+    dojo.connect(registry.byId('clearDrawingNoBtn'),'onClick',function(){
+      popup.close(registry.byId("clearDrawingDialog"));
+    });
+
+    dojo.connect(registry.byId('clearDrawingYesBtn'),'onClick',function(){
+      popup.close(registry.byId("clearDrawingDialog"));
+      var geom = createClearDrawingJSON();
+      whiteboard.sendMessage({geometry: geom });
+      drawFromJSON(geom,whiteboard.drawing);
+    });
+
+    _.forEach(tools,function(tool){
+      dojo.connect(registry.byId(tool.name + 'ToolBtn'),'onClick',function(){
+        selectTool(tool.name);
+      });
+    });
 
     dojo.connect(registry.byId("wbText"), 'onKeyDown', function(evt) {
-          if(evt.keyCode == dojo.keys.ENTER) {
-            doAddText();
+      if(evt.keyCode == dojo.keys.ENTER) {
+        doAddText();
       }
-     });
+    });
 
      dojo.connect(registry.byId("okTextBtn"), 'onClick', function(evt) {
           doAddText();
