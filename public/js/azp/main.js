@@ -4,16 +4,19 @@ define([
   './tools',
   './selectTool',
   './drawFromJSON',
+  './animateUserItem',
+  './populateUserList',
+  './getHoveredShape',
   './wb/whiteboard',
   './wb/getGfxMouse',
   './wb/DNDFileController',
   'dojo/dom',
   'wsrpc/client',
   './wb/create-json',
-  "dojo/parser",
+  'dojo/parser',
+  'dojo/on',
   'dijit/popup',
   'dijit/registry',
-  'dojo/_base/fx',
 
   'dijit/form/ValidationTextBox',
   'dijit/form/TextBox',
@@ -24,10 +27,9 @@ define([
   'dijit/layout/ContentPane',
 
   "dojox/gfx",
-  "dojo/fx",
   "dojox/gfx/move",
-  "dojo/NodeList-fx",
   "dojox/widget/ColorPicker",
+
   "dijit/form/DropDownButton",
   "dijit/Dialog",
   "dijit/TooltipDialog",
@@ -39,7 +41,7 @@ define([
   "dijit/form/HorizontalSlider",
 
   'dojo/domReady!'
-], function(req, _, tools, selectTool, drawFromJSON, whiteboard, getGfxMouse, DNDFileController, dom, WsRpc, createGeom, parser, popup, registry, fx){
+], function(req, _, tools, selectTool, drawFromJSON, animateUserItem, populateUserList, getHoveredShape, whiteboard, getGfxMouse, DNDFileController, dom, WsRpc, createGeom, parser, on, popup, registry){
 
   var geomMessageList = [];
   var messageList = [];
@@ -49,12 +51,9 @@ define([
   var userList = [];
   var messageListObj = null;
 
-  parser.parse().then(function(){
-    selectTool('pen');
-    req(['./webrtc'], function(){});
-  });
+  var wsrpc = new WsRpc(io.connect('/'));
 
-  whiteboard.sendMessage = function(message){
+  function sendMessage(message){
     wsrpc.methods.sendMessage(wbId,message,userName).then(function(resp){
       console.log("post response",resp);
       if(resp.message){
@@ -62,49 +61,10 @@ define([
       }
       clearChatUI();
     });
-  };
+  }
 
   var getUserList = function() {
     wsrpc.methods.getUsers(wbId).then(populateUserList);
-  };
-
-  var populateUserList = function(userList){
-    if(userList && userList.length){
-      try{
-        var output = '';
-        _.forEach(userList,function(user){
-          output += ('<span id=\"userListItem' + user + '\" style=\"background-color: #FFFFFF;\">' + user + '</span><br>');
-        });
-        dom.byId("userListDiv").innerHTML = output;
-      }catch(e){
-        console.info("error filling user list div",e);
-      }
-      animateUserItem(userList[userList.length - 1]);
-    }
-  };
-
-  var animateUserItem = function(user){
-    try{
-      var userNode = dom.byId("userListItem" + user);
-      if(userNode){
-        fx.animateProperty({
-          node: userNode,
-          duration: 750,
-          properties: {
-              backgroundColor: {
-                  start: "red",
-                  end: "white"
-              },
-              color: {
-                  start: "white",
-                  end: "black"
-              }
-          }
-        }).play();
-      }
-    }catch(e){
-      console.info("couldn\'t animate " + user, e);
-    }
   };
 
   var clearChatUI = function(){
@@ -122,7 +82,7 @@ define([
     dom.byId('applicationArea').style.display = '';
     registry.byId('applicationArea').resize();
     initGfx();
-    dojo.connect(registry.byId('chatBtn'),'onClick',sendChatMessage);
+    registry.byId('chatBtn').on('click', sendChatMessage);
 
     //display any saved messages
     _.forEach(messageList, function(m){
@@ -152,8 +112,7 @@ define([
       }
     }
 
-    if(obj.chatMessage || obj.geometry)
-    {
+    if(obj.chatMessage || obj.geometry){
       messageList.push(obj);
     }
 
@@ -200,20 +159,18 @@ define([
     dojo.style(whiteboard.overlayContainer,"top", (c.t + 'px'));
     dojo.style(whiteboard.overlayContainer,"left", (c.l + 'px'));
 
-    dojo.connect(dojo.body(),'onmouseup',doGfxMouseUp); //mouse release can happen anywhere in the container
-    dojo.connect(whiteboard.overlayContainer,'onmousedown',doGfxMouseDown);
-    //dojo.connect(dojo.body(),'onmousemove',doGfxMouseMove);
-    dojo.connect(whiteboard.overlayContainer,'onmousemove',doGfxMouseMove);
-    console.log("topov",dojo.style(whiteboard.overlayContainer,"top"));
+    on(document, 'mouseup', doGfxMouseUp); //mouse release can happen anywhere in the container
+    on(whiteboard.overlayContainer, 'mousedown', doGfxMouseDown);
+    on(whiteboard.overlayContainer, 'mousemove', doGfxMouseMove);
 
-     if(Modernizr.draganddrop){
-       console.log('supports drag and drop!');
-       var dndc = new DNDFileController('whiteboardOverlayContainer', function(imgJSON){
-          drawFromJSON(imgJSON,whiteboard.drawing);
+    if(Modernizr.draganddrop){
+      console.log('supports drag and drop!');
+      var dndc = new DNDFileController('whiteboardOverlayContainer', function(imgJSON){
+        drawFromJSON(imgJSON,whiteboard.drawing);
 
-          whiteboard.sendMessage({geometry:imgJSON});
-       });
-     }
+        sendMessage({geometry:imgJSON});
+      });
+    }
   };
 
   var createOffsetBB = function(origBB, pointInBB, newPt){
@@ -239,7 +196,7 @@ define([
     }
   };
 
-  var doGfxMouseDown = function(evt){
+  function doGfxMouseDown(evt){
     var pt = getGfxMouse(evt);
     if(pointInDrawing(pt)){
       whiteboard.mouseDownPt = pt;
@@ -248,11 +205,12 @@ define([
 
       whiteboard.selectedShape = getHoveredShape(whiteboard.drawing,pt);
     }
-  };
+  }
 
-  var doGfxMouseMove = function(evt){
+  function doGfxMouseMove(evt){
     var pt = getGfxMouse(evt);
     var geom;
+    var shape;
 
     if(whiteboard.mouseDown){
       if((whiteboard.tool == 'pen') && pointInDrawing(pt) ){
@@ -310,7 +268,7 @@ define([
     } else {
       if(whiteboard.tool == 'move'){
         whiteboard.overlayDrawing.clear();
-        var shape = getHoveredShape(whiteboard.drawing,pt);
+        shape = getHoveredShape(whiteboard.drawing,pt);
         if(shape){
           geom = createGeom.moveOverlay(shape.wbbb);
           drawFromJSON(geom,whiteboard.overlayDrawing);
@@ -321,31 +279,32 @@ define([
     //mouse up or down doesn't matter for the select and delete tools
     if(whiteboard.tool == 'delete'){
       whiteboard.overlayDrawing.clear();
-      var shape = getHoveredShape(whiteboard.drawing,pt);
+      shape = getHoveredShape(whiteboard.drawing,pt);
       if(shape){
         geom = createGeom.deleteOverlay(shape.wbbb);
         drawFromJSON(geom,whiteboard.overlayDrawing);
       }
     }else if(whiteboard.tool == 'moveUp'){
       whiteboard.overlayDrawing.clear();
-      var shape = getHoveredShape(whiteboard.drawing,pt);
+      shape = getHoveredShape(whiteboard.drawing,pt);
       if(shape){
         geom = createGeom.moveUpOverlay(shape.wbbb);
         drawFromJSON(geom,whiteboard.overlayDrawing);
       }
     }else if(whiteboard.tool == 'moveDown'){
       whiteboard.overlayDrawing.clear();
-      var shape = getHoveredShape(whiteboard.drawing,pt);
+      shape = getHoveredShape(whiteboard.drawing,pt);
       if(shape){
         geom = createGeom.moveDownOverlay(shape.wbbb);
         drawFromJSON(geom,whiteboard.overlayDrawing);
       }
     }
-  };
+  }
 
-  var doGfxMouseUp = function(evt) {
+  function doGfxMouseUp(evt) {
     var pt = getGfxMouse(evt);
     whiteboard.mouseDown = false;
+    var shape;
 
     //always clear the overlay
     whiteboard.overlayDrawing.clear();
@@ -377,7 +336,7 @@ define([
           drawFromJSON(geom,whiteboard.drawing);
           console.log("num pen points sending:",geom.xPts.length);
         }else if(whiteboard.tool == 'delete'){
-          var shape = getHoveredShape(whiteboard.drawing,pt);
+          shape = getHoveredShape(whiteboard.drawing,pt);
           if(shape){
             geom = createGeom.deleteGeom(shape);
             drawFromJSON(geom,whiteboard.drawing);
@@ -392,13 +351,13 @@ define([
           }
 
         }else if(whiteboard.tool == 'moveUp'){
-          var shape = getHoveredShape(whiteboard.drawing,pt);
+          shape = getHoveredShape(whiteboard.drawing,pt);
           if(shape){
             geom = createGeom.moveUp(shape);
             drawFromJSON(geom,whiteboard.drawing);
           }
         }else if(whiteboard.tool == 'moveDown'){
-          var shape = getHoveredShape(whiteboard.drawing,pt);
+          shape = getHoveredShape(whiteboard.drawing,pt);
           if(shape){
             geom = createGeom.moveDown(shape);
             drawFromJSON(geom,whiteboard.drawing);
@@ -410,7 +369,7 @@ define([
         }
 
         if(geom){
-          whiteboard.sendMessage({geometry:geom});
+          sendMessage({geometry:geom});
         }
 
       }else{
@@ -423,37 +382,7 @@ define([
     whiteboard.mouseDownPt = null;
     whiteboard.selectedShape = null;
     whiteboard.points = [];
-  };
-
-  var getHoveredShape = function(drawing, pt){
-    try{
-      var children = drawing.children;
-      if(children){
-        for(var i = children.length; i > 0; i--){
-          var child = children[i - 1];
-          if(ptInBox(pt,child.wbbb)){
-            return child;
-          }
-        }
-      }
-    }catch(e){
-      console.log('error finding shape',e);
-    }
-
-    return null;
-  };
-
-  var ptInBox = function(pt, box){
-    if(pt && box){
-      if((pt.x >= box.x1) && (pt.x <= box.x2) && (pt.y >= box.y1) && (pt.y <= box.y2)){
-        return true;
-      }else{
-        return false;
-      }
-    }else{
-      return false;
-    }
-  };
+  }
 
   var chooseColor = function(type) {
     var cp = registry.byId(type + 'ColorPaletteWidget');
@@ -479,7 +408,7 @@ define([
       lastMessage = msg;
       dom.byId('chatWaitMessage').innerHTML = 'sending...';
       var chatMessage = {chatMessage:msg, fromUser: userName};
-      whiteboard.sendMessage(chatMessage);
+      sendMessage(chatMessage);
       printChatMessage(chatMessage);
     }else{
       cwm.innerHTML = 'Cat got your tongue?';
@@ -497,10 +426,8 @@ define([
 
   var exportMovieImage = function(){
     try{
-
       dom.byId("exportedImg").src = dojo.query('canvas',dom.byId('movieDialog'))[0].toDataURL();
       registry.byId("imgDialog").show();
-
     }catch(e){
       console.info("canvas not supported",e);
     }
@@ -553,7 +480,7 @@ define([
       var geom = createGeom.text(whiteboard.textPoint, text, whiteboard.fontSize, whiteboard.lineColor);
       drawFromJSON(geom,whiteboard.drawing);
       whiteboard.textPoint = null;
-      whiteboard.sendMessage({geometry:geom});
+      sendMessage({geometry:geom});
     }
     whiteboard.overlayDrawing.clear();
   };
@@ -589,112 +516,116 @@ define([
     }
   };
 
-  var loadFunction = function(){
-    dojo.connect(registry.byId('userNameBtn'),'onClick',submitUserName);
+  parser.parse().then(function(){
+    req(['./webrtc'], function(){});
+
+    registry.byId('userNameBtn').on('click', submitUserName);
+
     dom.byId('setUserDiv').style.display = '';
-    dojo.connect(registry.byId("userNameText"), 'onKeyDown', function(evt) {
+
+    registry.byId("userNameText").on('keydown', function(evt) {
       if(evt.keyCode == dojo.keys.ENTER) {
         submitUserName();
       }
     });
 
-    dojo.connect(registry.byId('lineColorPaletteOkBtn'),'onClick',function(){
+    registry.byId('lineColorPaletteOkBtn').on('click', function(){
       chooseColor('line');
     });
-    dojo.connect(registry.byId('lineColorPaletteCancelBtn'),'onClick',function(){
+
+    registry.byId('lineColorPaletteCancelBtn').on('click', function(){
       cancelChooseColor('line');
     });
 
-    dojo.connect(registry.byId('fillColorPaletteOkBtn'),'onClick',function(){
+    registry.byId('fillColorPaletteOkBtn').on('click', function(){
       chooseColor('fill');
     });
-    dojo.connect(registry.byId('fillColorPaletteCancelBtn'),'onClick',function(){
+
+    registry.byId('fillColorPaletteCancelBtn').on('click', function(){
       cancelChooseColor('fill');
     });
 
     if(Modernizr.canvas){
-      dojo.connect(registry.byId('exportImgBtn'),'onClick',exportImage);
-      dojo.connect(registry.byId('exportMovieImgBtn'),'onClick',exportMovieImage);
+      registry.byId('exportImgBtn').on('click', exportImage);
+      registry.byId('exportMovieImgBtn').on('click', exportMovieImage);
     } else {
       dojo.style(registry.byId('exportImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
       dojo.style(registry.byId('exportMovieImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
     }
 
-    dojo.connect(registry.byId('showMovieBtn'),'onClick',showMovie);
+    registry.byId('showMovieBtn').on('click', showMovie);
 
-    dojo.connect(registry.byId('movieSlider'),'onChange',incrementMovie);
+    registry.byId('movieSlider').on('change', incrementMovie);
 
-    dojo.connect(registry.byId('lineStrokeSelect'),'onChange',function(){
+    registry.byId('lineStrokeSelect').on('change', function(){
       whiteboard.lineStroke = Math.floor(1.0 * registry.byId('lineStrokeSelect').getValue());
     });
 
-    dojo.connect(registry.byId('fontSizeSelect'),'onChange',function(){
+    registry.byId('fontSizeSelect').on('change', function(){
       whiteboard.fontSize = Math.floor(1.0 * registry.byId('fontSizeSelect').getValue());
     });
 
-    dojo.connect(registry.byId('clearDrawingNoBtn'),'onClick',function(){
+    registry.byId('clearDrawingNoBtn').on('click',function(){
       popup.close(registry.byId("clearDrawingDialog"));
     });
 
-    dojo.connect(registry.byId('clearDrawingYesBtn'),'onClick',function(){
+    registry.byId('clearDrawingYesBtn').on('click', function(){
       popup.close(registry.byId("clearDrawingDialog"));
       var geom = createClearDrawingJSON();
-      whiteboard.sendMessage({geometry: geom });
+      sendMessage({geometry: geom });
       drawFromJSON(geom,whiteboard.drawing);
     });
 
     _.forEach(tools,function(tool){
-      dojo.connect(registry.byId(tool.name + 'ToolBtn'),'onClick',function(){
+      registry.byId(tool.name + 'ToolBtn').on('click', function(){
         selectTool(tool.name);
       });
     });
 
-    dojo.connect(registry.byId("wbText"), 'onKeyDown', function(evt) {
+    registry.byId("wbText").on('keydown', function(evt) {
       if(evt.keyCode == dojo.keys.ENTER) {
         doAddText();
       }
     });
 
-     dojo.connect(registry.byId("okTextBtn"), 'onClick', function(evt) {
-          doAddText();
-     });
+    registry.byId("okTextBtn").on('click', function(evt) {
+      doAddText();
+    });
 
-     dojo.connect(registry.byId("cancelTextBtn"), 'onClick', function(evt) {
-          doCancelAddText();
-     });
+    registry.byId("cancelTextBtn").on('click', function(evt) {
+      doCancelAddText();
+    });
 
-     dojo.connect(registry.byId("wbText"), 'onKeyUp', function(evt) {
-          doIncrementalText();
-     });
+    registry.byId("wbText").on('keyup', function(evt) {
+      doIncrementalText();
+    });
 
-     dojo.connect(registry.byId("wbText"), 'onChange', function(evt) {
-          doIncrementalText();
-     });
+    registry.byId("wbText").on('change', function(evt) {
+      doIncrementalText();
+    });
 
-     dojo.connect(registry.byId("textDialog"), 'onClose', function(evt) {
+    registry.byId("textDialog").on('close', function(evt) {
       whiteboard.overlayDrawing.clear();
       registry.byId("wbText").setValue('');
-     });
+    });
 
-     dojo.connect(registry.byId("textDialog"), 'onHide', function(evt) {
+    registry.byId("textDialog").on('hide', function(evt) {
       whiteboard.overlayDrawing.clear();
       registry.byId("wbText").setValue('');
-     });
+    });
 
-     try{
-       var reader = new FileReader();
-       reader.onload = function(e) {
-         document.querySelector('img').src = e.target.result;
-       };
+    try{
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        document.querySelector('img').src = e.target.result;
+      };
 
-       function onDrop(e) {
-         reader.readAsDataURL(e.dataTransfer.files[0]);
-       }
-     } catch(imgE){}
-  };
+      function onDrop(e) {
+        reader.readAsDataURL(e.dataTransfer.files[0]);
+      }
+    } catch(imgE){}
 
-  var wsrpc = new WsRpc(io.connect('/'));
-
-  loadFunction();
+    selectTool('pen');
+  });
 
 });
