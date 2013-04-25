@@ -1,5 +1,6 @@
 define([
   'require',
+  'lodash',
   './tools',
   './selectTool',
   './drawFromJSON',
@@ -39,7 +40,7 @@ define([
   "dijit/form/HorizontalSlider",
 
   'dojo/domReady!'
-], function(req, tools, selectTool, drawFromJSON, whiteboard, getGfxMouse, DNDFileController, dom, on, WsRpc, createGeom, parser, dijit, fx){
+], function(req, _, tools, selectTool, drawFromJSON, whiteboard, getGfxMouse, DNDFileController, dom, on, WsRpc, createGeom, parser, dijit, fx){
 
 var chatMessageList = [];
 var geomMessageList = [];
@@ -69,13 +70,6 @@ whiteboard.sendMessage = function(message){
   });
 
   };
-
-  whiteboard.pingServer = function() {
-
-
-  };
-
-
 
  var getUserList = function() {
 
@@ -518,7 +512,7 @@ var  sendChatMessage = function(){
   var cwm = dom.byId('chatWaitMessage');
   var ct = dijit.registry.byId('chatText');
   var cb = dijit.registry.byId('chatBtn');
-  var msg = cleanString(dojo.trim('' + ct.getValue()));
+  var msg = _.escape(dojo.trim('' + ct.getValue()));
   if(msg == lastMessage){
     cwm.innerHTML = 'That\'s what you said last time.';
   }else if(msg){
@@ -635,7 +629,7 @@ var submitUserName = function(){
       unt.setAttribute('disabled',true);
       unm.innerHTML = 'sending...';
 
-      userName = cleanString(unt.getValue());
+      userName = _.escape(unt.getValue());
       wsrpc.methods.getWhiteBoard(wbId, userName).then(function(result){
        messageList = result.messages;
        //showResult(result,timeStart);
@@ -648,15 +642,6 @@ var submitUserName = function(){
 
     }
  };
-
-  function cleanString(str){
-    if(str){
-      str = String(str);
-      str = str.replace(/</g,'{').replace(/>/g,'}');
-      return str;
-    }
-  }
-
 
  var loadFunction = function(){
 

@@ -8,7 +8,8 @@
       "util": "github:dojo/util/1.8.3",
       "dijit": "github:dojo/dijit/1.8.3",
       "wsrpc": "github:monteslu/wsrpc/master",
-      "dojox": "github:dojo/dojox/1.8.3"
+      "dojox": "github:dojo/dojox/1.8.3",
+      "lodash": "github:bestiejs/lodash/v1.2.0"
     }
   },
   "private": true,

@@ -1,4 +1,5 @@
 node_modules
+public/js/lodash.js
 public/js/dojo
 public/js/dijit
 public/js/dojox

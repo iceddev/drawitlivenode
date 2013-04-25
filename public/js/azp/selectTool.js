@@ -1,8 +1,9 @@
 define([
   './tools',
   './wb/whiteboard',
+  'lodash',
   'dijit/registry'
-], function(tools, whiteboard, registry){
+], function(tools, whiteboard, _, registry){
 
   'use strict';
 
@@ -27,7 +28,7 @@ define([
     hide("fontSizeSelect");
 
     var tool = null;
-    dojo.forEach(tools,function(aTool){
+    _.forEach(tools,function(aTool){
       if(aTool.name == toolName){
         tool = aTool;
       }

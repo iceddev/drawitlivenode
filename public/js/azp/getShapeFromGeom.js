@@ -1,10 +1,12 @@
-define(function(){
+define([
+  'lodash'
+], function(_){
 
   'use strict';
 
   return function getShapeFromGeom(geom, drawing){
     var retVal = null;
-    dojo.every(drawing.children, function(shape){
+    _.all(drawing.children, function(shape){
       if((shape.cRand == geom.cRand) && (shape.cTime == geom.cTime)){
         retVal = shape;
         return false;
