@@ -2,6 +2,14 @@ define([
   'require',
   'lodash',
 
+  './widgets/UserNameBtn',
+  './widgets/UserNameText',
+  './widgets/ImgDialog',
+  './widgets/TextDialog',
+  './widgets/MovieDialog',
+
+  './widgets/ToolButton',
+
   './tools',
   './selectTool',
 
@@ -17,7 +25,6 @@ define([
   './doCancelAddText',
   './doAddText',
   './doIncrementalText',
-  './submitUserName',
   './onClearDrawing',
   './onClearDrawingCancel',
 
@@ -46,22 +53,110 @@ define([
   'dijit/form/HorizontalSlider',
 
   'dojo/domReady!'
-], function(req, _, tools, selectTool, whiteboard, chooseColor, cancelChooseColor, exportImage, exportMovieImage, showMovie, incrementMovie, doCancelAddText, doAddText, doIncrementalText, submitUserName, onClearDrawing, onClearDrawingCancel, dom, parser, registry){
+], function(
+  req,
+  _,
+  UserNameBtn,
+  UserNameText,
+  ImgDialog,
+  TextDialog,
+  MovieDialog,
+  ToolButton,
+  tools, selectTool, whiteboard, chooseColor, cancelChooseColor, exportImage, exportMovieImage, showMovie, incrementMovie, doCancelAddText, doAddText, doIncrementalText, onClearDrawing, onClearDrawingCancel, dom, parser, registry){
+
+  'use strict';
 
   var messageList = [];
 
   parser.parse().then(function(){
     req(['./webrtc'], function(){});
 
-    registry.byId('userNameBtn').on('click', submitUserName);
-
     dom.byId('setUserDiv').style.display = '';
 
-    registry.byId('userNameText').on('keydown', function(evt) {
-      if(evt.keyCode == dojo.keys.ENTER) {
-        submitUserName();
-      }
-    });
+    var userNameText = new UserNameText({}, 'userNameText');
+    userNameText.startup();
+    var wbIdText = new UserNameText({}, 'wbIdText');
+    wbIdText.startup();
+    var userNameBtn = new UserNameBtn({}, 'userNameBtn');
+    userNameBtn.startup();
+
+    var imgDialog = new ImgDialog({}, 'imgDialog');
+    imgDialog.startup();
+    var textDialog = new TextDialog({}, 'textDialog');
+    textDialog.startup();
+    var movieDialog = new MovieDialog({}, 'movieDialog');
+    movieDialog.startup();
+
+    var penTool = new ToolButton({
+      label: 'Pencil (freehand drawing)',
+      iconClass: 'icon pencil-icon'
+    }, 'penToolBtn');
+    penTool.startup();
+
+    var lineTool = new ToolButton({
+      label: 'Straight Line',
+      iconClass: 'icon line-icon'
+    }, 'lineToolBtn');
+    lineTool.startup();
+
+    var rectTool = new ToolButton({
+      label: 'Rectangle',
+      iconClass: 'icon rect-icon'
+    }, 'rectToolBtn');
+    rectTool.startup();
+
+    var filledRectTool = new ToolButton({
+      label: 'Filled Rectangle',
+      iconClass: 'icon filled-rect-icon'
+    }, 'filledRectToolBtn');
+    filledRectTool.startup();
+
+    var ellipseTool = new ToolButton({
+      label: 'Ellipse',
+      iconClass: 'icon ellipse-icon'
+    }, 'ellipseToolBtn');
+    ellipseTool.startup();
+
+    var filledEllipseTool = new ToolButton({
+      label: 'Filled Ellipse',
+      iconClass: 'icon filled-ellipse-icon'
+    }, 'filledEllipseToolBtn');
+    filledEllipseTool.startup();
+
+    var textTool = new ToolButton({
+      label: 'Draw Text',
+      iconClass: 'icon text-icon'
+    }, 'textToolBtn');
+    textTool.startup();
+
+    var moveTool = new ToolButton({
+      label: 'Move a shape',
+      iconClass: 'icon move-icon'
+    }, 'moveToolBtn');
+    moveTool.startup();
+
+    var moveUpTool = new ToolButton({
+      label: 'Pull a shape forward',
+      iconClass: 'icon move-up-icon'
+    }, 'moveUpToolBtn');
+    moveUpTool.startup();
+
+    var moveDownTool = new ToolButton({
+      label: 'Push a shape back',
+      iconClass: 'icon move-down-icon'
+    }, 'moveDownToolBtn');
+    moveDownTool.startup();
+
+    var deleteTool = new ToolButton({
+      label: 'Delete a shape',
+      iconClass: 'icon delete-icon'
+    }, 'deleteToolBtn');
+
+    var smileTool = new ToolButton({
+      label: 'Say Cheese!',
+      iconClass: 'icon'
+    }, 'smileBtn');
+    smileTool.startup();
 
     registry.byId('lineColorPaletteOkBtn').on('click', _.partial(chooseColor, 'line'));
 

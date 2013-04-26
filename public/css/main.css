@@ -1,0 +1,93 @@
+* {
+  box-sizing: border-box;
+}
+
+#header{
+  font-size: 3em;
+  text-align: center;
+}
+
+#setUserDiv{
+  text-align: center;
+}
+
+.login {
+  padding: 5px;
+}
+
+.application {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.chat {
+  width: 30%;
+  float: left;
+  padding: 10px;
+}
+
+.whiteboard {
+  width: 70%;
+  float: left;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+}
+
+.pencil-icon {
+  background: url(../images/pencil.png);
+}
+
+.line-icon {
+  background: url(../images/line.png);
+}
+
+.rect-icon {
+  background: url(../images/rect.png);
+}
+
+.filled-rect-icon {
+  background: url(../images/filledRect.png);
+}
+
+.ellipse-icon {
+  background: url(../images/ellipse.png);
+}
+
+.filled-ellipse-icon {
+  background: url(../images/filledEllipse.png);
+}
+
+.text-icon {
+  background: url(../images/text.png);
+}
+
+.move-icon {
+  background: url(../images/move.png);
+}
+
+.move-up-icon {
+  background: url(../images/moveUp.png);
+}
+
+.move-down-icon {
+  background: url(../images/moveDown.png);
+}
+
+.delete-icon {
+  background: url(../images/delete.png);
+}
+
+/* dijit overrides */
+.dijitTooltip {
+  box-sizing: content-box;
+}
+
+.claro .dijitTooltipContents {
+  white-space: nowrap;
+}

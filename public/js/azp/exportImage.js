@@ -1,17 +1,24 @@
 define([
-  'dojo/dom',
+  'dojo/on',
   'dojo/query',
   'dijit/registry'
-], function(dom, query, registry){
+], function(on, query, registry){
 
   'use strict';
 
+  var exportedImg = new Image();
+
   return function exportImage(){
-    try{
-      dom.byId("exportedImg").src = query('canvas', 'applicationArea')[0].toDataURL();
-      registry.byId("imgDialog").show();
-    }catch(e){
-      console.info("canvas not supported",e);
+    if(Modernizr.canvas){
+      var imgDialog = registry.byId('imgDialog');
+      exportedImg.src = '';
+      on(exportedImg, 'load', function(){
+        imgDialog.show();
+      });
+      imgDialog.set('content', exportedImg);
+      exportedImg.src = query('canvas', 'applicationArea')[0].toDataURL();
+    } else {
+      console.log('canvas not supported');
     }
   };
 

@@ -13,7 +13,7 @@ define([
     dom.byId('setUserDiv').style.display = 'none';
 
     dom.byId('applicationArea').style.display = '';
-    registry.byId('applicationArea').resize();
+    // registry.byId('applicationArea').resize();
     initGfx(messageList);
     registry.byId('chatBtn').on('click', sendChatMessage);
 
