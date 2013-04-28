@@ -2,9 +2,9 @@ define([
   './wb/whiteboard',
   './wb/create-json',
   './drawFromJson',
-  'dojo/on',
+  'dijit/registry',
   'dojo/domReady!'
-], function(whiteboard, createGeom, drawFromJSON, on){
+], function(whiteboard, createGeom, drawFromJSON, registry){
 
   'use strict';
 
@@ -27,7 +27,7 @@ define([
     }
   };
 
-  on(dijit.registry.byId('smileBtn'), 'click', takePicture);
+  registry.byId('smile').on('click', takePicture);
 
   var app = document.getElementById('app');
   var video = document.getElementById('monitor');

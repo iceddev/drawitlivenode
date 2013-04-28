@@ -75,7 +75,6 @@ define([
         }else if(whiteboard.tool == 'text'){
           whiteboard.textPoint = pt;
           registry.byId('textDialog').show();
-          registry.byId('wbText').focus();
         }
 
         if(geom){

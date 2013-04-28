@@ -32,7 +32,7 @@ define([
       if(aTool.name == toolName){
         tool = aTool;
       }
-      dojo.removeClass(dijit.registry.byId(aTool.name + 'ToolBtn').domNode, "selected");
+      dojo.removeClass(registry.byId(aTool.name).domNode, "selected");
     });
 
     if(!tool){
@@ -40,7 +40,7 @@ define([
     }
 
     if(tool.name){
-      dojo.addClass(dijit.registry.byId(tool.name + 'ToolBtn').domNode, "selected");
+      dojo.addClass(registry.byId(tool.name).domNode, "selected");
       whiteboard.tool = tool.name;
     }
 

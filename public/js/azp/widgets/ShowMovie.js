@@ -1,10 +1,9 @@
 define([
-  '../selectTool',
-  './ToolTooltip',
-  'lodash',
+  '../showMovie',
+  './ExportTooltip',
   'dojo/_base/declare',
   'dijit/form/Button'
-], function(selectTool, ToolTooltip, _, declare, Button){
+], function(showMovie, ExportTooltip, declare, Button){
 
   /* jshint strict: false */
 
@@ -12,13 +11,12 @@ define([
     postCreate: function(){
       this.set('showLabel', false);
 
-      this.set('tooltip', new ToolTooltip({
+      this.set('tooltip', new ExportTooltip({
         connectId: this.id,
         label: this.label
       }));
 
-      // TODO: change names to make this work
-      this.on('click', _.partial(selectTool, this.id));
+      this.on('click', showMovie);
 
       this.inherited(arguments);
     }

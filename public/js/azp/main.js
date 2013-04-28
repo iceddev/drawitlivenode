@@ -1,6 +1,5 @@
 define([
   'require',
-  'lodash',
 
   './widgets/UserNameBtn',
   './widgets/UserNameText',
@@ -10,59 +9,37 @@ define([
 
   './widgets/ToolButton',
 
-  './tools',
+  './widgets/ColorDropDown',
+  './widgets/SizeSpinner',
+
+  './widgets/ExportImg',
+  './widgets/ShowMovie',
+
+  './widgets/ClearDropDown',
+
   './selectTool',
 
-  './wb/whiteboard',
-
-  './chooseColor',
-  './cancelChooseColor',
-  './exportImage',
   './exportMovieImage',
-  './showMovie',
   './incrementMovie',
-
-  './doCancelAddText',
-  './doAddText',
-  './doIncrementalText',
-  './onClearDrawing',
-  './onClearDrawingCancel',
 
   'dojo/dom',
   'dojo/parser',
   'dijit/registry',
 
-  'dijit/form/ValidationTextBox',
-  'dijit/form/TextBox',
-  'dijit/form/Textarea',
-  'dijit/form/Button',
-  'dijit/Dialog',
-  'dijit/layout/BorderContainer',
-  'dijit/layout/ContentPane',
-
-  'dojox/widget/ColorPicker',
-
-  'dijit/form/DropDownButton',
-  'dijit/Dialog',
-  'dijit/TooltipDialog',
-  'dijit/Tooltip',
-  'dijit/form/RadioButton',
-  'dijit/form/Select',
-  'dijit/form/Form',
-  'dijit/form/Slider',
-  'dijit/form/HorizontalSlider',
-
   'dojo/domReady!'
 ], function(
   req,
-  _,
   UserNameBtn,
   UserNameText,
   ImgDialog,
   TextDialog,
   MovieDialog,
   ToolButton,
-  tools, selectTool, whiteboard, chooseColor, cancelChooseColor, exportImage, exportMovieImage, showMovie, incrementMovie, doCancelAddText, doAddText, doIncrementalText, onClearDrawing, onClearDrawingCancel, dom, parser, registry){
+  ColorDropDown,
+  SizeSpinner,
+  ExportImage,
+  ShowMovie,
+  ClearDropDown, selectTool, exportMovieImage, incrementMovie, dom, parser, registry){
 
   'use strict';
 
@@ -90,133 +67,116 @@ define([
     var penTool = new ToolButton({
       label: 'Pencil (freehand drawing)',
       iconClass: 'icon pencil-icon'
-    }, 'penToolBtn');
+    }, 'pen');
     penTool.startup();
 
     var lineTool = new ToolButton({
       label: 'Straight Line',
       iconClass: 'icon line-icon'
-    }, 'lineToolBtn');
+    }, 'line');
     lineTool.startup();
 
     var rectTool = new ToolButton({
       label: 'Rectangle',
       iconClass: 'icon rect-icon'
-    }, 'rectToolBtn');
+    }, 'rect');
     rectTool.startup();
 
     var filledRectTool = new ToolButton({
       label: 'Filled Rectangle',
       iconClass: 'icon filled-rect-icon'
-    }, 'filledRectToolBtn');
+    }, 'filledRect');
     filledRectTool.startup();
 
     var ellipseTool = new ToolButton({
       label: 'Ellipse',
       iconClass: 'icon ellipse-icon'
-    }, 'ellipseToolBtn');
+    }, 'ellipse');
     ellipseTool.startup();
 
     var filledEllipseTool = new ToolButton({
       label: 'Filled Ellipse',
       iconClass: 'icon filled-ellipse-icon'
-    }, 'filledEllipseToolBtn');
+    }, 'filledEllipse');
     filledEllipseTool.startup();
 
     var textTool = new ToolButton({
       label: 'Draw Text',
       iconClass: 'icon text-icon'
-    }, 'textToolBtn');
+    }, 'text');
     textTool.startup();
 
     var moveTool = new ToolButton({
       label: 'Move a shape',
       iconClass: 'icon move-icon'
-    }, 'moveToolBtn');
+    }, 'move');
     moveTool.startup();
 
     var moveUpTool = new ToolButton({
       label: 'Pull a shape forward',
       iconClass: 'icon move-up-icon'
-    }, 'moveUpToolBtn');
+    }, 'moveUp');
     moveUpTool.startup();
 
     var moveDownTool = new ToolButton({
       label: 'Push a shape back',
       iconClass: 'icon move-down-icon'
-    }, 'moveDownToolBtn');
+    }, 'moveDown');
     moveDownTool.startup();
 
     var deleteTool = new ToolButton({
       label: 'Delete a shape',
       iconClass: 'icon delete-icon'
-    }, 'deleteToolBtn');
+    }, 'delete');
 
     var smileTool = new ToolButton({
       label: 'Say Cheese!',
-      iconClass: 'icon'
-    }, 'smileBtn');
+      iconClass: 'icon smiley-icon'
+    }, 'smile');
     smileTool.startup();
 
-    registry.byId('lineColorPaletteOkBtn').on('click', _.partial(chooseColor, 'line'));
+    var lineColor = new ColorDropDown({
+      label: 'Color',
+      type: 'line'
+    }, 'lineColorDisplay');
+    lineColor.startup();
 
-    registry.byId('lineColorPaletteCancelBtn').on('click', _.partial(cancelChooseColor, 'line'));
+    var fillColor = new ColorDropDown({
+      label: 'Fill',
+      type: 'fill'
+    }, 'fillColorDisplay');
+    fillColor.startup();
 
-    registry.byId('fillColorPaletteOkBtn').on('click', _.partial(chooseColor, 'fill'));
+    var lineStroke = new SizeSpinner({
+      value: 3,
+      wbType: 'lineStroke'
+    }, 'lineStrokeSelect');
+    lineStroke.startup();
 
-    registry.byId('fillColorPaletteCancelBtn').on('click', _.partial(cancelChooseColor, 'fill'));
+    var fontSize = new SizeSpinner({
+      value: 12,
+      wbType: 'fontSize'
+    }, 'fontSizeSelect');
+    fontSize.startup();
 
-    if(Modernizr.canvas){
-      registry.byId('exportImgBtn').on('click', exportImage);
-      registry.byId('exportMovieImgBtn').on('click', exportMovieImage);
-    } else {
-      dojo.style(registry.byId('exportImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
-      dojo.style(registry.byId('exportMovieImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
-    }
+    var exportImage = new ExportImage({
+      label: 'Export the drawing surface.',
+      iconClass: 'icon export-icon'
+    }, 'exportImgBtn');
+    exportImage.startup();
 
-    registry.byId('showMovieBtn').on('click', showMovie);
+    var showMovie = new ShowMovie({
+      label: 'View all steps that made this drawing.',
+      iconClass: 'icon movie-icon'
+    }, 'showMovieBtn');
+    showMovie.startup();
+
+    var clearDrawing = new ClearDropDown({
+      label: 'Clear'
+    }, 'clearDrawingDisplay');
+    clearDrawing.startup();
 
     registry.byId('movieSlider').on('change', incrementMovie);
-
-    registry.byId('lineStrokeSelect').on('change', function(){
-      whiteboard.lineStroke = Math.floor(1.0 * registry.byId('lineStrokeSelect').getValue());
-    });
-
-    registry.byId('fontSizeSelect').on('change', function(){
-      whiteboard.fontSize = Math.floor(1.0 * registry.byId('fontSizeSelect').getValue());
-    });
-
-    registry.byId('clearDrawingNoBtn').on('click', onClearDrawingCancel);
-
-    registry.byId('clearDrawingYesBtn').on('click', onClearDrawing);
-
-    _.forEach(tools, function(tool){
-      registry.byId(tool.name + 'ToolBtn').on('click', _.partial(selectTool, tool.name));
-    });
-
-    registry.byId('wbText').on('keydown', function(evt) {
-      if(evt.keyCode == dojo.keys.ENTER) {
-        doAddText();
-      }
-    });
-
-    registry.byId('okTextBtn').on('click', doAddText);
-
-    registry.byId('cancelTextBtn').on('click', doCancelAddText);
-
-    registry.byId('wbText').on('keyup', doIncrementalText);
-
-    registry.byId('wbText').on('change', doIncrementalText);
-
-    registry.byId('textDialog').on('close', function(evt) {
-      whiteboard.overlayDrawing.clear();
-      registry.byId('wbText').setValue('');
-    });
-
-    registry.byId('textDialog').on('hide', function(evt) {
-      whiteboard.overlayDrawing.clear();
-      registry.byId('wbText').setValue('');
-    });
 
     selectTool('pen');
   });

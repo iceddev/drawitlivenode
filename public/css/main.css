@@ -83,11 +83,28 @@
   background: url(../images/delete.png);
 }
 
+.smiley-icon {
+  background: url(../images/smiley.png);
+}
+
+.export-icon {
+  background: url(../images/export-icon.png);
+}
+
+.movie-icon {
+  background: url(../images/movie-icon.png);
+}
+
 /* dijit overrides */
-.dijitTooltip {
+[class^="dijit"],
+[class^="dojox"] {
   box-sizing: content-box;
 }
 
 .claro .dijitTooltipContents {
   white-space: nowrap;
+}
+
+.claro .dijitSpinner {
+  width: 50px;
 }

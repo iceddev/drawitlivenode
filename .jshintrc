@@ -27,5 +27,6 @@
     "jasmine": true,
     "xdescribe": true,
     "xit": true
+    "Modernizr": true
   }
 }
