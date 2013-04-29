@@ -17,7 +17,6 @@ define([
         label: this.label
       }));
 
-      // TODO: change names to make this work
       this.on('click', _.partial(selectTool, this.id));
 
       this.inherited(arguments);

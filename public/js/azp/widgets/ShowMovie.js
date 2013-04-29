@@ -1,9 +1,9 @@
 define([
-  '../showMovie',
+  './MovieDialog',
   './ExportTooltip',
   'dojo/_base/declare',
   'dijit/form/Button'
-], function(showMovie, ExportTooltip, declare, Button){
+], function(MovieDialog, ExportTooltip, declare, Button){
 
   /* jshint strict: false */
 
@@ -16,7 +16,12 @@ define([
         label: this.label
       }));
 
-      this.on('click', showMovie);
+      var movieDialog = new MovieDialog({});
+      movieDialog.startup();
+
+      this.on('click', function(){
+        movieDialog.show();
+      });
 
       this.inherited(arguments);
     }

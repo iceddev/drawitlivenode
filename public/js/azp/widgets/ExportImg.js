@@ -19,10 +19,8 @@ define([
 
       if(Modernizr.canvas){
         this.on('click', exportImage);
-        // registry.byId('exportMovieImgBtn').on('click', exportMovieImage);
       } else {
         domStyle.set(this.domNode, 'display', 'none');
-        // domStyle(registry.byId('exportMovieImgBtn').domNode, {'visibility': 'hidden', 'display': 'none'});
       }
 
       this.inherited(arguments);

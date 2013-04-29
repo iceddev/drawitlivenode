@@ -95,6 +95,16 @@
   background: url(../images/movie-icon.png);
 }
 
+#movieWhiteboardContainer {
+  border: 2px blue solid;
+  background-color: white;
+  margin-bottom: 10px;
+}
+
+#movieUser {
+  margin-left: 10px;
+}
+
 /* dijit overrides */
 [class^="dijit"],
 [class^="dojox"] {
@@ -107,4 +117,8 @@
 
 .claro .dijitSpinner {
   width: 50px;
+}
+
+.claro .dijitSliderH {
+  margin-bottom: 10px;
 }

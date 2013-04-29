@@ -5,7 +5,6 @@ define([
   './widgets/UserNameText',
   './widgets/ImgDialog',
   './widgets/TextDialog',
-  './widgets/MovieDialog',
 
   './widgets/ToolButton',
 
@@ -19,12 +18,8 @@ define([
 
   './selectTool',
 
-  './exportMovieImage',
-  './incrementMovie',
-
   'dojo/dom',
   'dojo/parser',
-  'dijit/registry',
 
   'dojo/domReady!'
 ], function(
@@ -33,17 +28,14 @@ define([
   UserNameText,
   ImgDialog,
   TextDialog,
-  MovieDialog,
   ToolButton,
   ColorDropDown,
   SizeSpinner,
   ExportImage,
   ShowMovie,
-  ClearDropDown, selectTool, exportMovieImage, incrementMovie, dom, parser, registry){
+  ClearDropDown, selectTool, dom, parser){
 
   'use strict';
-
-  var messageList = [];
 
   parser.parse().then(function(){
     req(['./webrtc'], function(){});
@@ -61,8 +53,6 @@ define([
     imgDialog.startup();
     var textDialog = new TextDialog({}, 'textDialog');
     textDialog.startup();
-    var movieDialog = new MovieDialog({}, 'movieDialog');
-    movieDialog.startup();
 
     var penTool = new ToolButton({
       label: 'Pencil (freehand drawing)',
@@ -175,8 +165,6 @@ define([
       label: 'Clear'
     }, 'clearDrawingDisplay');
     clearDrawing.startup();
-
-    registry.byId('movieSlider').on('change', incrementMovie);
 
     selectTool('pen');
   });

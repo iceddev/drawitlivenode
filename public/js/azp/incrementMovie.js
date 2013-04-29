@@ -1,9 +1,9 @@
 define([
   './drawFromJson',
   './wb/whiteboard',
-  'dojo/dom',
+  'put',
   'dijit/registry'
-], function(drawFromJSON, whiteboard, dom, registry){
+], function(drawFromJSON, whiteboard, put, registry){
 
   'use strict';
 
@@ -14,7 +14,7 @@ define([
       drawFromJSON(whiteboard.geomMessageList[i].geometry, whiteboard.movieDrawing);
     }
     if(indexEnd > 0){
-      dom.byId('movieUser').innerHTML = whiteboard.geomMessageList[indexEnd - 1].fromUser;
+      dom.byId('movieUser').innerHTML = 'User: ' + whiteboard.geomMessageList[indexEnd - 1].fromUser;
     }
   };
 

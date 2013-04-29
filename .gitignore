@@ -5,4 +5,5 @@ public/js/dijit
 public/js/dojox
 public/js/util
 public/js/wsrpc
+public/js/put-selector
 libs/
