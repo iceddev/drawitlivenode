@@ -1,5 +1,4 @@
 define([
-  // Require in modules here
   'dojo/_base/config',
   'dojo/node!ecstatic',
   'dojo/node!http',

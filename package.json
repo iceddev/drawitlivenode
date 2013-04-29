@@ -10,7 +10,8 @@
       "wsrpc": "github:monteslu/wsrpc/master",
       "dojox": "github:dojo/dojox/1.8.3",
       "lodash": "github:bestiejs/lodash/v1.2.0",
-      "put-selector": "github:kriszyp/put-selector/v0.3.4"
+      "put-selector": "github:kriszyp/put-selector/v0.3.4",
+      "modernizr": "github:Modernizr/Modernizr/v2.6.2"
     }
   },
   "private": true,

@@ -1,18 +1,16 @@
-// The module to "bootstrap"
 var loadModule = "server";
 
-// Configuration Object for Dojo Loader:
 dojoConfig = {
-  baseUrl: __dirname, // Where we will put our packages
-  async: 1, // We want to make sure we are using the "modern" loader
+  baseUrl: __dirname,
+  async: 1,
   hasCache: {
-    "host-node": 1, // Ensure we "force" the loader into NodeJS mode
-    "dom": 0 // Ensure that none of the code assumes we have a DOM
+    "host-node": 1,
+    "dom": 0
   },
-  // While it is possible to use config-tlmSiblingOfDojo to tell the
-  // loader that your packages share the same root path as the loader,
-  // this really isn't always a good idea and it is better to be
-  // explicit about our package map.
+  paths: {
+    'lodash': 'public/js/lodash',
+    // 'put': 'put-selector/put'
+  },
   packages: [{
     name: "dojo",
     location: "public/js/dojo"
@@ -26,8 +24,7 @@ dojoConfig = {
     name: "server",
     location: "server"
   }],
-  deps: [ loadModule ] // And array of modules to load on "boot"
+  deps: [ loadModule ]
 };
 
-// Now load the Dojo loader
 require("./public/js/dojo/dojo.js");
