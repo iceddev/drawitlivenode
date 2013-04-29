@@ -1,14 +1,13 @@
 define([
   'dojo/on',
-  'dojo/query',
   'dijit/registry'
-], function(on, query, registry){
+], function(on, registry){
 
   'use strict';
 
   var exportedImg = new Image();
 
-  return function exportImage(){
+  return function exportImage(canvas){
     if(Modernizr.canvas){
       var imgDialog = registry.byId('imgDialog');
       exportedImg.src = '';
@@ -16,7 +15,7 @@ define([
         imgDialog.show();
       });
       imgDialog.set('content', exportedImg);
-      exportedImg.src = query('canvas', 'applicationArea')[0].toDataURL();
+      exportedImg.src = canvas.toDataURL();
     } else {
       console.log('canvas not supported');
     }

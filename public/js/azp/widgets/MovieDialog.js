@@ -1,14 +1,15 @@
 define([
   '../wb/whiteboard',
-  '../exportMovieImage',
+  '../exportImage',
   './ExportTooltip',
   'lodash',
   'put',
   'dojo/_base/declare',
+  'dojo/query',
   'dijit/Dialog',
   'dijit/form/Button',
   'dijit/form/HorizontalSlider'
-], function(whiteboard, exportMovieImage, ExportTooltip, _, put, declare, Dialog, Button, HorizontalSlider){
+], function(whiteboard, exportImage, ExportTooltip, _, put, declare, query, Dialog, Button, HorizontalSlider){
 
   /* jshint strict: false */
 
@@ -18,7 +19,8 @@ define([
   return declare(Dialog, {
     title: 'Move slider to see drawing steps.',
     postCreate: function(){
-      put(this.containerNode, 'div#movieWhiteboardContainer');
+      var container = this.containerNode;
+      put(container, 'div#movieWhiteboardContainer');
 
       var slider = new HorizontalSlider({
         value: 0,
@@ -37,7 +39,10 @@ define([
         showLabel: false,
         postCreate: function(){
           if(Modernizr.canvas){
-            this.on('click', exportMovieImage);
+            this.on('click', function(){
+              var canvas = query('canvas', container)[0];
+              exportImage(canvas);
+            });
           } else {
             domStyle.set(this.domNode, 'display', 'none');
           }
@@ -51,7 +56,7 @@ define([
       });
       this.addChild(tooltip);
 
-      put(this.containerNode, 'span#movieUser', {
+      put(container, 'span#movieUser', {
         innerHTML: 'User:'
       });
 

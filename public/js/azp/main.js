@@ -22,18 +22,7 @@ define([
   'dojo/parser',
 
   'dojo/domReady!'
-], function(
-  req,
-  UserNameBtn,
-  UserNameText,
-  ImgDialog,
-  TextDialog,
-  ToolButton,
-  ColorDropDown,
-  SizeSpinner,
-  ExportImage,
-  ShowMovie,
-  ClearDropDown, selectTool, dom, parser){
+], function(req, UserNameBtn, UserNameText, ImgDialog, TextDialog, ToolButton, ColorDropDown, SizeSpinner, ExportImage, ShowMovie, ClearDropDown, selectTool, dom, parser){
 
   'use strict';
 
